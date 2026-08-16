@@ -1,4 +1,5 @@
 import json
+import subprocess
 import tomllib
 from pathlib import Path
 
@@ -8,7 +9,9 @@ from readme_gen.models import ProjectInfo
 def detect_metadata(root: Path, project: ProjectInfo) -> None:
     detect_pyproject(root, project)
     detect_package_json(root, project)
+    detect_git_remote(root, project)
     detect_license(root, project)
+
 
 def detect_pyproject(root: Path, project: ProjectInfo) -> None:
     pyproject = root / "pyproject.toml"
@@ -31,24 +34,14 @@ def detect_pyproject(root: Path, project: ProjectInfo) -> None:
         project.description = project_data["description"]
 
     project.dependencies.extend(
-        parse_python_dependency(dep)
-        for dep in project_data.get("dependencies", [])
+        parse_python_dependency(dependency)
+        for dependency in project_data.get("dependencies", [])
     )
 
-    scripts = project_data.get("scripts", {})
+    project.cli_commands.update(
+        project_data.get("scripts", {})
+    )
 
-    for name, command in scripts.items():
-        project.scripts[name] = command
-        project.entry_points.append(name)
-
-def parse_python_dependency(dependency: str) -> str:
-    dependency = dependency.split(";")[0]
-    dependency = dependency.split("[")[0]
-
-    for operator in ("==", ">=", "<=", "~=", "!=", ">", "<"):
-        dependency = dependency.split(operator)[0]
-
-    return dependency.strip()
 
 def detect_package_json(root: Path, project: ProjectInfo) -> None:
     package_json = root / "package.json"
@@ -57,7 +50,9 @@ def detect_package_json(root: Path, project: ProjectInfo) -> None:
         return
 
     try:
-        data = json.loads(package_json.read_text(encoding="utf-8"))
+        data = json.loads(
+            package_json.read_text(encoding="utf-8")
+        )
     except (OSError, json.JSONDecodeError):
         return
 
@@ -73,7 +68,9 @@ def detect_package_json(root: Path, project: ProjectInfo) -> None:
     project.dependencies.extend(dependencies.keys())
     project.dev_dependencies.extend(dev_dependencies.keys())
 
-    project.scripts.update(data.get("scripts", {}))
+    project.package_scripts.update(
+        data.get("scripts", {})
+    )
 
     repository = data.get("repository")
 
@@ -85,6 +82,34 @@ def detect_package_json(root: Path, project: ProjectInfo) -> None:
 
     if data.get("license"):
         project.license = data["license"]
+
+
+def detect_git_remote(root: Path, project: ProjectInfo) -> None:
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "config",
+                "--get",
+                "remote.origin.url",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return
+
+    if result.returncode != 0:
+        return
+
+    remote_url = result.stdout.strip()
+
+    if remote_url:
+        project.repository_url = remote_url
+
 
 def detect_license(root: Path, project: ProjectInfo) -> None:
     if project.license:
@@ -100,3 +125,21 @@ def detect_license(root: Path, project: ProjectInfo) -> None:
         if (root / filename).exists():
             project.license = filename
             return
+
+
+def parse_python_dependency(dependency: str) -> str:
+    dependency = dependency.split(";")[0]
+    dependency = dependency.split("[")[0]
+
+    for operator in (
+        "==",
+        ">=",
+        "<=",
+        "~=",
+        "!=",
+        ">",
+        "<",
+    ):
+        dependency = dependency.split(operator)[0]
+
+    return dependency.strip()

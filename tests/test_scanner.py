@@ -49,13 +49,15 @@ demo = "demo.main:app"
     assert "typer" in project.dependencies
     assert "fastapi" in project.dependencies
 
-    assert project.scripts["demo"] == "demo.main:app"
+    assert project.cli_commands["demo"] == "demo.main:app"
 
     assert "src" in project.source_dirs
     assert "tests" in project.test_dirs
 
     assert "pyproject.toml" in project.important_files
-
+    assert project.project_type == "cli"
+    assert "pyproject.toml" in project.context_files
+    assert "src/demo/main.py" in project.context_files
 
 def test_scan_react_project(tmp_path: Path):
     package_json = tmp_path / "package.json"
@@ -112,9 +114,12 @@ def test_scan_react_project(tmp_path: Path):
     assert "vite" in project.dev_dependencies
     assert "typescript" in project.dev_dependencies
 
-    assert project.scripts["dev"] == "vite"
-    assert project.scripts["build"] == "vite build"
+    assert project.package_scripts["dev"] == "vite"
+    assert project.package_scripts["build"] == "vite build"
 
+    assert project.project_type == "frontend"
+    assert "package.json" in project.context_files
+    assert "src/App.tsx" in project.context_files
 
 def test_ignored_directories_are_not_scanned(tmp_path: Path):
     node_modules = tmp_path / "node_modules"

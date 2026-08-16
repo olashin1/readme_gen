@@ -1,9 +1,11 @@
 from pathlib import Path
 
+from readme_gen.detectors.context import detect_context_files
 from readme_gen.detectors.frameworks import detect_frameworks
 from readme_gen.detectors.languages import detect_languages
 from readme_gen.detectors.metadata import detect_metadata
 from readme_gen.detectors.package_managers import detect_package_managers
+from readme_gen.detectors.project_type import detect_project_type
 from readme_gen.detectors.structure import (
     build_directory_tree,
     detect_structure,
@@ -17,6 +19,9 @@ IGNORED_DIRS = {
     "venv",
     "node_modules",
     "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
     "dist",
     "build",
     ".next",
@@ -60,6 +65,13 @@ def scan_project(root: Path) -> ProjectInfo:
         project.important_files,
     ) = detect_structure(root, files)
 
+    project.context_files = detect_context_files(
+        root,
+        files,
+    )
+
     project.directory_tree = build_directory_tree(root)
+
+    project.project_type = detect_project_type(project)
 
     return project

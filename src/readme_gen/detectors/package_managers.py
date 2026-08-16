@@ -51,8 +51,8 @@ def detect_package_json(root: Path, project: ProjectInfo) -> None:
     project.dependencies.extend(dependencies.keys())
     project.dev_dependencies.extend(dev_dependencies.keys())
 
-    project.scripts.update(data.get("scripts", {}))
-
+    project.package_scripts.update(data.get("scripts", {}))
+    
     repository = data.get("repository")
 
     if isinstance(repository, str):
