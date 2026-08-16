@@ -31,10 +31,16 @@ def main(
         ),
     ),
     output: Path = typer.Option(
-        Path("README.generated.md"),
+        Path("README.md"),
         "--output",
         "-o",
         help="Output file for the generated README.",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Overwrite the output file if it already exists.",
     ),
     no_ai: bool = typer.Option(
         False,
@@ -66,6 +72,17 @@ def main(
                     f"Analyzing local repository: "
                     f"{repository.path}"
                 )
+
+            output_path = _resolve_output_path(
+                output=output,
+                repository_path=repository.path,
+                is_github=repository.is_github,
+            )
+
+            _check_output_path(
+                output_path=output_path,
+                force=force,
+            )
 
             typer.echo("Scanning project...")
 
@@ -106,12 +123,6 @@ def main(
             typer.echo("Generating README...")
 
             readme = generate_readme(project)
-
-            output_path = _resolve_output_path(
-                output=output,
-                repository_path=repository.path,
-                is_github=repository.is_github,
-            )
 
             try:
                 output_path.parent.mkdir(
@@ -183,6 +194,30 @@ def _resolve_output_path(
         repository_path
         / output
     ).resolve()
+
+
+def _check_output_path(
+    output_path: Path,
+    force: bool,
+) -> None:
+    """
+    Prevent accidental overwrites unless the user explicitly opts in.
+    """
+    if not output_path.exists():
+        return
+
+    if force:
+        return
+
+    typer.echo(
+        (
+            f"Output file already exists: {output_path}\n"
+            "Use --force to overwrite it."
+        ),
+        err=True,
+    )
+
+    raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":
