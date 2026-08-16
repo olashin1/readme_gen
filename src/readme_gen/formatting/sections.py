@@ -121,7 +121,7 @@ def render_usage(
     detected_commands = [
         command
         for command in project.commands
-        if command.kind != "install"
+        if command.kind in {"development", "run", "script", "task", "usage"}
         and command.command not in cli_commands
     ]
 
@@ -285,10 +285,15 @@ def render_tech_stack(
         )
 
     if project.technology_roles:
+        role_labels = {
+            "Build": "Build System",
+            "CLI": "CLI Framework",
+            "Containers": "Deployment",
+        }
         for role, technologies in project.technology_roles.items():
             rows.append(
                 (
-                    role,
+                    role_labels.get(role, role),
                     ", ".join(technologies),
                 )
             )
@@ -361,7 +366,18 @@ def render_environment_variables(
 def render_api_routes(
     project: ProjectInfo,
 ) -> str:
-    if not project.api_routes:
+    return render_interfaces(project)
+
+
+def render_interfaces(
+    project: ProjectInfo,
+) -> str:
+    routes = [
+        interface
+        for interface in project.interfaces
+        if interface.kind == "http" and interface.method and interface.path
+    ]
+    if not routes:
         return ""
 
     lines = [
@@ -370,10 +386,52 @@ def render_api_routes(
         "| Method | Path | Handler |",
         "| --- | --- | --- |",
     ]
-    for route in project.api_routes:
-        handler = f"`{route.handler}`" if route.handler else "\u2014"
+    for route in routes:
+        handler = f"`{route.name}`" if route.name else "\u2014"
         lines.append(f"| `{route.method}` | `{route.path}` | {handler} |")
     return "\n".join(lines)
+
+
+def render_building(
+    project: ProjectInfo,
+) -> str:
+    commands = [
+        command.command
+        for command in project.commands
+        if command.kind == "build"
+    ]
+    if not commands:
+        return ""
+    return "\n".join(
+        [
+            "## \ud83d\udd28 Building",
+            "",
+            "```bash",
+            *commands,
+            "```",
+        ]
+    )
+
+
+def render_testing(
+    project: ProjectInfo,
+) -> str:
+    commands = [
+        command.command
+        for command in project.commands
+        if command.kind in {"test", "lint"}
+    ]
+    if not commands:
+        return ""
+    return "\n".join(
+        [
+            "## \u2705 Testing",
+            "",
+            "```bash",
+            *commands,
+            "```",
+        ]
+    )
 
 
 def render_examples(

@@ -43,6 +43,9 @@ def detect_package_managers(
     if "pyproject.toml" in names and not {"uv", "Poetry", "Pipenv", "pip"}.intersection(detected):
         detected.append("pip")
 
+    if any(path.suffix.lower() == ".csproj" for path in candidates):
+        detected.append("dotnet")
+
     return list(dict.fromkeys(detected))
 
 

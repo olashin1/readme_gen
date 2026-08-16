@@ -4,7 +4,7 @@ from readme_gen.detectors.path_filters import is_test_file
 from readme_gen.models import ProjectAsset
 
 
-IMAGE_SUFFIXES = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
+IMAGE_SUFFIXES = {".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"}
 ASSET_DIRECTORIES = {".github", "assets", "docs", "public", "screenshots"}
 MAX_ASSETS = 12
 

@@ -8,10 +8,14 @@ HIGH_PRIORITY_FILES = {
     "package.json",
     "Cargo.toml",
     "go.mod",
+    "pom.xml",
+    "build.gradle",
+    "build.gradle.kts",
     "Dockerfile",
     "docker-compose.yml",
     "docker-compose.yaml",
     ".env.example",
+    "CMakeLists.txt",
 }
 
 ENTRY_FILE_NAMES = {
@@ -42,6 +46,7 @@ SOURCE_SUFFIXES = {
     ".cs",
     ".go",
     ".rs",
+    ".fs",
 }
 
 

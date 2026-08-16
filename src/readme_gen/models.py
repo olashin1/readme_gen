@@ -89,6 +89,26 @@ class ApiRoute:
 
 
 @dataclass(frozen=True, slots=True)
+class Interface:
+    """A repository interface exposed to users or other software."""
+
+    kind: str
+    source: str
+    name: str | None = None
+    method: str | None = None
+    path: str | None = None
+    target: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectComponent:
+    name: str
+    path: str
+    ecosystems: tuple[str, ...] = ()
+    languages: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class ProjectAsset:
     path: str
     kind: str
@@ -180,6 +200,7 @@ class ProjectInfo:
 
     technologies: list[TechnologyInfo] = field(default_factory=list)
     technology_roles: dict[str, list[str]] = field(default_factory=dict)
+    build_tools: list[str] = field(default_factory=list)
     databases: list[str] = field(default_factory=list)
     external_services: list[str] = field(default_factory=list)
     frontend: list[str] = field(default_factory=list)
@@ -195,7 +216,11 @@ class ProjectInfo:
         default_factory=list
     )
     api_routes: list[ApiRoute] = field(default_factory=list)
+    interfaces: list[Interface] = field(default_factory=list)
+    components: list[ProjectComponent] = field(default_factory=list)
     assets: list[ProjectAsset] = field(default_factory=list)
+    deployment_files: list[str] = field(default_factory=list)
+    section_plan: list[str] = field(default_factory=list)
 
     # Optional repository-derived statements. Detectors should leave these
     # empty instead of inferring capabilities from filenames alone.

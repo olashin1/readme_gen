@@ -5,21 +5,25 @@ from collections.abc import Callable
 from readme_gen.formatting.sections import (
     render_api_routes,
     render_architecture,
+    render_building,
     render_development,
     render_environment_variables,
     render_examples,
     render_header,
     render_highlights,
     render_installation,
+    render_interfaces,
     render_license,
     render_overview,
     render_repository_info,
     render_screenshots,
     render_structure,
     render_tech_stack,
+    render_testing,
     render_usage,
 )
 from readme_gen.models import ProjectInfo
+from readme_gen.planning import plan_readme_sections
 
 
 SectionRenderer = Callable[
@@ -38,7 +42,9 @@ DEFAULT_LAYOUT: tuple[
     render_screenshots,
     render_usage,
     render_installation,
+    render_interfaces,
     render_tech_stack,
+    render_testing,
     render_environment_variables,
     render_api_routes,
     render_examples,
@@ -157,21 +163,28 @@ def render_readme(
 def choose_layout(
     project: ProjectInfo,
 ) -> tuple[SectionRenderer, ...]:
-    project_type = (
-        project.project_type
-        or ""
-    ).lower()
-
-    if project_type == "cli":
-        return CLI_LAYOUT
-
-    if project_type == "library":
-        return LIBRARY_LAYOUT
-
-    if project_type == "backend":
-        return BACKEND_LAYOUT
-
-    if project_type in {"frontend", "full-stack"}:
-        return APPLICATION_LAYOUT
-
-    return DEFAULT_LAYOUT
+    renderers: dict[str, SectionRenderer] = {
+        "header": render_header,
+        "highlights": render_highlights,
+        "overview": render_overview,
+        "screenshots": render_screenshots,
+        "tech_stack": render_tech_stack,
+        "installation": render_installation,
+        "building": render_building,
+        "usage": render_usage,
+        "examples": render_examples,
+        "interfaces": render_interfaces,
+        "environment": render_environment_variables,
+        "testing": render_testing,
+        "architecture": render_architecture,
+        "structure": render_structure,
+        "repository": render_repository_info,
+        "development": render_development,
+        "license": render_license,
+    }
+    plan = project.section_plan or plan_readme_sections(project)
+    return tuple(
+        renderers[section]
+        for section in plan
+        if section in renderers
+    )

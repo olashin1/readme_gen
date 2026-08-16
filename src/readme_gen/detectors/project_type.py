@@ -29,7 +29,11 @@ def detect_project_type(project: ProjectInfo) -> str:
         frameworks.intersection(BACKEND_FRAMEWORKS)
     )
 
-    has_cli = bool(project.cli_commands)
+    has_cli = bool(
+        project.cli_commands
+        or project.technology_roles.get("CLI")
+        or any(interface.kind == "cli" for interface in project.interfaces)
+    )
 
     if has_frontend and has_backend:
         return "full-stack"
@@ -43,6 +47,9 @@ def detect_project_type(project: ProjectInfo) -> str:
     if has_backend:
         return "backend"
 
+    if any(interface.kind == "executable" for interface in project.interfaces):
+        return "application"
+
     if is_library(project):
         return "library"
 
@@ -50,6 +57,9 @@ def detect_project_type(project: ProjectInfo) -> str:
 
 
 def is_library(project: ProjectInfo) -> bool:
+    if project.packages:
+        return True
+
     if not project.source_dirs:
         return False
 

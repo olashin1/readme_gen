@@ -1,4 +1,4 @@
-from google.genai import types
+from google.genai import errors, types
 
 from readme_gen.ai.client import get_gemini_client
 from readme_gen.ai.prompts import build_project_prompt
@@ -24,19 +24,31 @@ def analyze_project(
         project
     )
 
-    response = client.models.generate_content(
-        model=MODEL_NAME,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=ProjectAnalysis,
-            automatic_function_calling=(
-                types.AutomaticFunctionCallingConfig(
-                    disable=True,
-                )
+    try:
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=ProjectAnalysis,
+                automatic_function_calling=(
+                    types.AutomaticFunctionCallingConfig(
+                        disable=True,
+                    )
+                ),
             ),
-        ),
-    )
+        )
+    except errors.APIError as error:
+        if error.code == 429:
+            raise RuntimeError(
+                "Gemini API quota exceeded. Wait for the quota to reset, "
+                "check your plan and billing, or run with --no-ai."
+            ) from error
+
+        raise RuntimeError(
+            f"Gemini API request failed (HTTP {error.code}). "
+            "Try again later or run with --no-ai."
+        ) from error
 
     if response.parsed is None:
         raise RuntimeError(

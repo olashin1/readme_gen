@@ -221,12 +221,19 @@ def test_readme_sections_are_conditional_and_fact_driven(tmp_path: Path) -> None
 
 def test_prompt_redacts_environment_values(tmp_path: Path) -> None:
     write(tmp_path / ".env.example", "API_KEY=do-not-send-this-value")
+    write(tmp_path / "main.py", 'SERVICE_TOKEN = "hardcoded-token-value"')
+    write(
+        tmp_path / "package.json",
+        '{"name": "safe-prompt", "scripts": {"deploy": "tool --token package-script-secret"}}',
+    )
     project = scan_project(tmp_path)
 
     prompt = build_project_prompt(project)
 
     assert "API_KEY" in prompt
     assert "do-not-send-this-value" not in prompt
+    assert "hardcoded-token-value" not in prompt
+    assert "package-script-secret" not in prompt
     assert "API_KEY=<redacted>" in prompt
 
 

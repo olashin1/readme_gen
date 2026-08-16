@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from readme_gen.detectors.structure import IGNORED_DIRS
+from readme_gen.detectors.structure import IGNORED_DIRS, is_ignored_directory
 from readme_gen.models import ProjectInfo
 
 
@@ -34,6 +34,9 @@ IMPORTANT_FILE_DESCRIPTIONS = {
     "Cargo.toml": "Rust project configuration",
     "go.mod": "Go module definition",
     "CMakeLists.txt": "CMake build configuration",
+    "pom.xml": "Maven project configuration",
+    "build.gradle": "Gradle build configuration",
+    "build.gradle.kts": "Gradle build configuration",
     "Dockerfile": "Container definition",
     "docker-compose.yml": "Container services",
     "docker-compose.yaml": "Container services",
@@ -175,6 +178,7 @@ def collect_top_level_entries(
         and not path.name.startswith(".")
         and path.name not in seen
         and path.name not in IGNORED_DIRS
+        and not is_ignored_directory(path)
     ]
 
     for path in general_directories[
@@ -195,6 +199,9 @@ def collect_top_level_entries(
         "Cargo.toml",
         "go.mod",
         "CMakeLists.txt",
+        "pom.xml",
+        "build.gradle",
+        "build.gradle.kts",
         "Dockerfile",
         "docker-compose.yml",
         "docker-compose.yaml",
@@ -212,6 +219,10 @@ def collect_top_level_entries(
             name in important_names
             or name in entries_by_name
         ):
+            add(name)
+
+    for name, path in sorted(entries_by_name.items()):
+        if path.is_file() and path.suffix.lower() == ".csproj":
             add(name)
 
     return selected
@@ -353,6 +364,9 @@ def get_entry_description(
         "LICENSE"
     ):
         return "License"
+
+    if entry.suffix.lower() == ".csproj":
+        return ".NET project configuration"
 
     return IMPORTANT_FILE_DESCRIPTIONS.get(
         entry.name

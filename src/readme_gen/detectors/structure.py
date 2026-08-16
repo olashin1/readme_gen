@@ -33,6 +33,9 @@ IMPORTANT_FILE_NAMES = {
     "Cargo.toml",
     "go.mod",
     "CMakeLists.txt",
+    "pom.xml",
+    "build.gradle",
+    "build.gradle.kts",
     "tailwind.config.js",
     "tailwind.config.ts",
     "README.md",
@@ -53,8 +56,12 @@ IGNORED_DIRS = {
     ".next",
     ".idea",
     ".vscode",
+    ".gradle",
     "dist",
     "build",
+    "target",
+    "vendor",
+    "out",
     "coverage",
     "htmlcov",
 }
@@ -68,6 +75,14 @@ IGNORED_FILES = {
 
 MAX_TREE_CHILDREN = 30
 MAX_TREE_LINES = 200
+
+
+def is_ignored_directory(path: Path) -> bool:
+    if path.name in IGNORED_DIRS:
+        return True
+    if path.name not in {"bin", "obj"}:
+        return False
+    return any(path.parent.glob("*.csproj"))
 
 
 def detect_structure(
@@ -91,7 +106,7 @@ def detect_structure(
     for file in files:
         if is_test_file(root, file):
             continue
-        if file.name in IMPORTANT_FILE_NAMES:
+        if file.name in IMPORTANT_FILE_NAMES or file.suffix.lower() == ".csproj":
             important_files.append(
                 file.relative_to(root).as_posix()
             )
@@ -133,7 +148,7 @@ def _walk_tree(
     items = [
         item
         for item in current.iterdir()
-        if item.name not in IGNORED_DIRS
+        if not (item.is_dir() and is_ignored_directory(item))
         and item.name not in IGNORED_FILES
     ]
 

@@ -16,6 +16,8 @@ from readme_gen.repository.metadata import (
     repository_metadata_from_github,
 )
 from readme_gen.scanner import scan_project
+from readme_gen.metadata_debug import format_metadata_debug
+from readme_gen.planning import plan_readme_sections
 
 
 app = typer.Typer()
@@ -46,6 +48,14 @@ def main(
         False,
         "--no-ai",
         help="Generate the README without Gemini analysis.",
+    ),
+    debug_metadata: bool = typer.Option(
+        False,
+        "--debug-metadata",
+        help=(
+            "Print safe normalized analyzer metadata as JSON and exit "
+            "without calling Gemini or writing a README."
+        ),
     ),
 ) -> None:
     """
@@ -79,10 +89,11 @@ def main(
                 is_github=repository.is_github,
             )
 
-            _check_output_path(
-                output_path=output_path,
-                force=force,
-            )
+            if not debug_metadata:
+                _check_output_path(
+                    output_path=output_path,
+                    force=force,
+                )
 
             typer.echo("Scanning project...")
 
@@ -101,6 +112,12 @@ def main(
                     project,
                     repository_metadata,
                 )
+
+                project.section_plan = plan_readme_sections(project)
+
+            if debug_metadata:
+                typer.echo(format_metadata_debug(project))
+                return
 
             if not no_ai:
                 typer.echo(

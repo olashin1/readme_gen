@@ -72,6 +72,18 @@ def detect_package_json(root: Path, project: ProjectInfo) -> None:
         data.get("scripts", {})
     )
 
+    binary = data.get("bin")
+    if isinstance(binary, str):
+        project.cli_commands[project.name] = binary
+    elif isinstance(binary, dict):
+        project.cli_commands.update(
+            {
+                str(name): str(target)
+                for name, target in binary.items()
+                if isinstance(target, str)
+            }
+        )
+
     repository = data.get("repository")
 
     if isinstance(repository, str):

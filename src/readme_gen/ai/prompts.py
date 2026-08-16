@@ -22,13 +22,14 @@ Important rules:
 - Treat the structured metadata as the authoritative source of repository facts.
 - Only make claims supported by the supplied metadata or selected file excerpts.
 - Do not invent features, commands, flags, integrations, workflows, compatibility claims, or usage patterns.
+- Do not invent technologies, environment variables, routes, screenshots, tests, licenses, deployment instructions, or architecture components.
 - Never turn a low-confidence clue or filename into a definite feature claim.
 - Distinguish between what this specific project currently does and what its tools or frameworks are generally capable of doing.
 - If something is uncertain, omit it rather than guessing.
 - Keep the content concise and easy to skim.
 - Write for a technical audience without assuming deep familiarity with the project.
 - Prefer clear, direct language over promotional hype.
-- Avoid vague phrases such as "comprehensive solution", "robust application", "seamless experience", "powerful platform", "revolutionary", "cutting-edge", and "next-generation".
+- Avoid vague phrases and adjectives such as "comprehensive", "robust", "seamless", "powerful", "cutting-edge", "state-of-the-art", and "innovative solution".
 - Prefer short sentences, concrete nouns, and terminology found in the metadata.
 - Do not write exhaustive API documentation.
 - Focus on what would be useful on the main GitHub repository page.
@@ -42,12 +43,14 @@ Return structured content with the following fields:
    - Explain what the project is or what it helps users do.
    - Keep it concise.
    - Do not simply repeat the project name.
+   - Return an empty string if the metadata does not establish the project's purpose.
 
 2. summary
    - One concise paragraph explaining what the project does.
    - Mention the main problem or use case when supported by the repository.
    - Give enough context for a first-time visitor to understand the project.
    - Avoid implementation-level details unless they are central to the project's identity.
+   - If "overview" is absent from section_plan, return an empty string.
 
 3. highlights
    - Return no more than 6 concise bullet-style statements.
@@ -57,18 +60,21 @@ Return structured content with the following fields:
    - Do not create a long exhaustive feature list.
    - Avoid repeating the summary.
    - Avoid listing low-level dependencies as highlights unless they are directly meaningful to users.
+   - If "highlights" is absent from section_plan, return an empty list.
 
 4. usage_summary
    - Briefly explain how someone typically interacts with or runs the project.
    - Focus on the normal user workflow.
    - Mention visible CLI commands, scripts, frameworks, or usage patterns only when supported by the supplied information.
    - Do not invent exact command syntax or arguments that are not shown.
+   - If "usage" is absent from section_plan, return an empty string.
 
 5. architecture
    - Give a concise, high-level explanation of how the major parts of the project fit together.
    - Focus on the important architectural relationships.
    - Avoid excessive implementation detail.
    - Keep this useful for someone trying to understand the codebase at a glance.
+   - If "architecture" is absent from section_plan, return an empty string.
 
 Structured repository metadata (JSON):
 
@@ -90,11 +96,23 @@ def build_metadata_payload(project: ProjectInfo) -> dict[str, object]:
         "description": project.description,
         "project_type": project.project_type,
         "languages": project.languages,
+        "frameworks": project.frameworks,
+        "libraries": project.libraries,
         "package_managers": project.package_managers,
+        "build_tools": project.build_tools,
         "dependencies": project.dependencies,
         "development_dependencies": project.dev_dependencies,
         "cli_entry_points": project.cli_commands,
-        "package_scripts": project.package_scripts,
+        "package_scripts": sorted(project.package_scripts),
+        "components": [
+            {
+                "name": component.name,
+                "path": component.path,
+                "ecosystems": list(component.ecosystems),
+                "languages": list(component.languages),
+            }
+            for component in project.components
+        ],
         "technologies": [
             {
                 "name": technology.name,
@@ -112,6 +130,8 @@ def build_metadata_payload(project: ProjectInfo) -> dict[str, object]:
             for technology in project.technologies
         ],
         "technology_roles": project.technology_roles,
+        "databases": project.databases,
+        "external_services": project.external_services,
         "commands": [
             {
                 "kind": command.kind,
@@ -137,13 +157,32 @@ def build_metadata_payload(project: ProjectInfo) -> dict[str, object]:
             }
             for route in project.api_routes
         ],
+        "interfaces": [
+            {
+                "kind": interface.kind,
+                "name": interface.name,
+                "method": interface.method,
+                "path": interface.path,
+                "target": interface.target,
+                "source": interface.source,
+            }
+            for interface in project.interfaces
+        ],
         "assets": [
             {"path": asset.path, "kind": asset.kind}
             for asset in project.assets
         ],
         "features": project.features,
+        "license": project.license,
+        "deployment_configuration": project.deployment_files,
+        "section_plan": project.section_plan,
         "source_directories": project.source_dirs,
         "test_directories": project.test_dirs,
+        "test_commands": [
+            command.command
+            for command in project.commands
+            if command.kind in {"test", "lint"}
+        ],
         "project_structure": project.directory_tree,
         "workflows": [
             {
@@ -240,6 +279,8 @@ def read_context_file(
 
     if redact_environment:
         contents = redact_environment_values(contents)
+    else:
+        contents = redact_potential_secrets(contents)
 
     if len(contents) > max_chars:
         contents = (
@@ -260,6 +301,21 @@ def redact_environment_values(contents: str) -> str:
         if match:
             lines.append(f"{match.group(1)}=<redacted>")
     return "\n".join(lines)
+
+
+def redact_potential_secrets(contents: str) -> str:
+    secret_name = r"[A-Za-z0-9_.-]*(?:api[_-]?key|token|secret|password|credential)[A-Za-z0-9_.-]*"
+    assignment = re.compile(
+        rf"(?i)(?P<prefix>['\"]?{secret_name}['\"]?\s*[:=]\s*)(?P<quote>['\"])(?P<value>.*?)(?P=quote)"
+    )
+    contents = assignment.sub(
+        lambda match: f"{match.group('prefix')}{match.group('quote')}<redacted>{match.group('quote')}",
+        contents,
+    )
+    flag = re.compile(
+        r"(?i)(--(?:api-key|token|secret|password|credential)(?:=|\s+))([^\s'\"]+)"
+    )
+    return flag.sub(r"\1<redacted>", contents)
 
 
 def format_mapping(values: dict[str, str]) -> str:

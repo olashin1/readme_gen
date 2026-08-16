@@ -22,6 +22,14 @@ EXTENSION_MAP = {
     ".php": "PHP",
     ".swift": "Swift",
     ".kt": "Kotlin",
+    ".kts": "Kotlin",
+    ".fs": "F#",
+    ".fsx": "F#",
+    ".vb": "Visual Basic .NET",
+    ".scala": "Scala",
+    ".m": "Objective-C",
+    ".mm": "Objective-C++",
+    ".dart": "Dart",
 }
 
 

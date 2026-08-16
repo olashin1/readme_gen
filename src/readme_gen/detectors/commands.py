@@ -336,23 +336,131 @@ def _container_commands(root: Path, files: list[Path]) -> list[ProjectCommand]:
 
 
 def _compiled_project_commands(root: Path, files: list[Path]) -> list[ProjectCommand]:
-    names = {path.name: path for path in files}
-    if "Cargo.toml" in names:
-        manifest = names["Cargo.toml"]
+    commands: list[ProjectCommand] = []
+
+    for manifest in (path for path in files if path.name == "Cargo.toml"):
         source = manifest.relative_to(root).as_posix()
         option = "" if manifest.parent == root else f" --manifest-path {source}"
-        return [
+        commands.extend([
             ProjectCommand("build", f"cargo build{option}", source),
             ProjectCommand("test", f"cargo test{option}", source),
-        ]
-    if "CMakeLists.txt" in names:
-        manifest = names["CMakeLists.txt"]
+        ])
+        if (manifest.parent / "src" / "main.rs").is_file() or _cargo_declares_binary(manifest):
+            commands.append(
+                ProjectCommand("run", f"cargo run{option}", source, "run")
+            )
+
+    for manifest in (path for path in files if path.name == "CMakeLists.txt"):
         source = manifest.relative_to(root).as_posix()
         directory = manifest.parent.relative_to(root).as_posix()
         source_directory = "." if directory == "." else directory
         build_directory = "build" if directory == "." else f"{directory}/build"
-        return [
+        commands.extend([
             ProjectCommand("build", f"cmake -S {source_directory} -B {build_directory}", source),
             ProjectCommand("build", f"cmake --build {build_directory}", source),
-        ]
-    return []
+        ])
+        content = _read_text(manifest)
+        if re.search(r"\b(?:enable_testing|include\s*\(\s*CTest|add_test)\b", content, re.IGNORECASE):
+            commands.append(
+                ProjectCommand("test", f"ctest --test-dir {build_directory}", source, "test")
+            )
+
+    for manifest in (path for path in files if path.name == "go.mod"):
+        source = manifest.relative_to(root).as_posix()
+        directory = manifest.parent.relative_to(root).as_posix()
+        prefix = "" if directory == "." else f"(cd {directory} && "
+        suffix = "" if directory == "." else ")"
+        commands.append(
+            ProjectCommand("build", f"{prefix}go build ./...{suffix}", source)
+        )
+        if any(
+            path.name.endswith("_test.go") and manifest.parent in path.parents
+            for path in files
+        ):
+            commands.append(
+                ProjectCommand("test", f"{prefix}go test ./...{suffix}", source, "test")
+            )
+        run_target = _go_run_target(manifest.parent, files)
+        if run_target:
+            commands.append(
+                ProjectCommand("run", f"{prefix}go run {run_target}{suffix}", source, "run")
+            )
+
+    for manifest in (path for path in files if path.name == "pom.xml"):
+        source = manifest.relative_to(root).as_posix()
+        wrapper = manifest.parent / "mvnw"
+        if wrapper.is_file():
+            executable = f"./{wrapper.relative_to(root).as_posix()}"
+        else:
+            executable = "mvn"
+        file_option = "" if manifest.parent == root else f" -f {source}"
+        commands.extend([
+            ProjectCommand("build", f"{executable}{file_option} package", source),
+            ProjectCommand("test", f"{executable}{file_option} test", source, "test"),
+        ])
+
+    for manifest in (
+        path
+        for path in files
+        if path.name in {"build.gradle", "build.gradle.kts"}
+    ):
+        source = manifest.relative_to(root).as_posix()
+        wrapper = manifest.parent / "gradlew"
+        executable = f"./{wrapper.relative_to(root).as_posix()}" if wrapper.is_file() else "gradle"
+        directory = manifest.parent.relative_to(root).as_posix()
+        project_option = "" if directory == "." else f" -p {directory}"
+        commands.extend([
+            ProjectCommand("build", f"{executable}{project_option} build", source),
+            ProjectCommand("test", f"{executable}{project_option} test", source, "test"),
+        ])
+
+    for manifest in (path for path in files if path.suffix.lower() == ".csproj"):
+        source = manifest.relative_to(root).as_posix()
+        commands.extend([
+            ProjectCommand("install", f"dotnet restore {source}", source),
+            ProjectCommand("build", f"dotnet build {source}", source),
+        ])
+        content = _read_text(manifest)
+        if "Microsoft.NET.Test.Sdk" in content or "test" in manifest.stem.lower():
+            commands.append(
+                ProjectCommand("test", f"dotnet test {source}", source, "test")
+            )
+        if re.search(r"<OutputType>\s*(?:Exe|WinExe)\s*</OutputType>", content, re.IGNORECASE) or "Microsoft.NET.Sdk.Web" in content:
+            commands.append(
+                ProjectCommand("run", f"dotnet run --project {source}", source, "run")
+            )
+
+    return commands
+
+
+def _cargo_declares_binary(manifest: Path) -> bool:
+    try:
+        with manifest.open("rb") as file:
+            return bool(tomllib.load(file).get("bin"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return False
+
+
+def _go_run_target(directory: Path, files: list[Path]) -> str | None:
+    root_main = directory / "main.go"
+    if root_main in files and re.search(r"(?m)^\s*package\s+main\b", _read_text(root_main)):
+        return "."
+    command_root = directory / "cmd"
+    candidates: list[Path] = []
+    for path in files:
+        if path.name != "main.go" or command_root not in path.parents:
+            continue
+        if re.search(r"(?m)^\s*package\s+main\b", _read_text(path)):
+            candidates.append(path.parent)
+    if len(candidates) == 1:
+        return f"./{candidates[0].relative_to(directory).as_posix()}"
+    return None
+
+
+def _read_text(path: Path) -> str:
+    try:
+        if path.stat().st_size > 512_000:
+            return ""
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""

@@ -50,6 +50,15 @@ DEPENDENCY_TECHNOLOGIES: dict[str, tuple[str, str, str]] = {
     "google-genai": ("Gemini", "service", "AI"),
     "google-generativeai": ("Gemini", "service", "AI"),
     "@google/generative-ai": ("Gemini", "service", "AI"),
+    "clap": ("Clap", "library", "CLI"),
+    "commander": ("Commander.js", "library", "CLI"),
+    "pytest": ("pytest", "testing", "Testing"),
+    "vitest": ("Vitest", "testing", "Testing"),
+    "jest": ("Jest", "testing", "Testing"),
+    "junit": ("JUnit", "testing", "Testing"),
+    "xunit": ("xUnit", "testing", "Testing"),
+    "catch2": ("Catch2", "testing", "Testing"),
+    "googletest": ("GoogleTest", "testing", "Testing"),
 }
 
 
@@ -136,14 +145,14 @@ def detect_technologies(
                 "framework configuration",
                 Confidence.HIGH,
             )
-        if lower_name == "dockerfile" or lower_name.startswith("docker-compose") or lower_name in {"compose.yml", "compose.yaml"}:
+        if lower_name.startswith("dockerfile") or lower_name.startswith("docker-compose") or lower_name in {"compose.yml", "compose.yaml"}:
             add(
                 ("Docker", "infrastructure", "Containers"),
                 path,
                 "configuration file",
                 Confidence.HIGH,
             )
-            if lower_name != "dockerfile":
+            if not lower_name.startswith("dockerfile"):
                 compose_content = (_read_small_text(path) or "").lower()
                 for token, dependency in (
                     ("postgres", "psycopg"),
@@ -161,6 +170,27 @@ def detect_technologies(
         if path.name == "CMakeLists.txt":
             add(
                 ("CMake", "build tool", "Build"),
+                path,
+                "build configuration",
+                Confidence.HIGH,
+            )
+            cmake_content = (_read_small_text(path) or "").lower()
+            for token, dependency in (
+                ("catch2", "catch2"),
+                ("googletest", "googletest"),
+                ("gtest", "googletest"),
+            ):
+                if token in cmake_content:
+                    add(
+                        DEPENDENCY_TECHNOLOGIES[dependency],
+                        path,
+                        "build configuration",
+                        Confidence.HIGH,
+                    )
+        configuration_technologies = _configuration_technologies(path)
+        for technology in configuration_technologies:
+            add(
+                technology,
                 path,
                 "build configuration",
                 Confidence.HIGH,
@@ -346,7 +376,7 @@ def _manifest_dependencies(path: Path) -> list[str]:
             if line.strip() and not line.lstrip().startswith(("#", "-"))
         ]
 
-    if path.name in {"go.mod", "pom.xml", "build.gradle", "build.gradle.kts"}:
+    if path.name in {"go.mod", "pom.xml", "build.gradle", "build.gradle.kts"} or path.suffix.lower() == ".csproj":
         content = _read_small_text(path)
         if content is None:
             return []
@@ -358,6 +388,23 @@ def _manifest_dependencies(path: Path) -> list[str]:
             if package in content.lower()
         ]
 
+    return []
+
+
+def _configuration_technologies(path: Path) -> list[tuple[str, str, str]]:
+    if path.name == "Cargo.toml":
+        return [("Cargo", "build tool", "Build")]
+    if path.name == "go.mod":
+        return [("Go Modules", "build tool", "Build")]
+    if path.name == "pom.xml":
+        return [("Maven", "build tool", "Build")]
+    if path.name in {"build.gradle", "build.gradle.kts"}:
+        return [("Gradle", "build tool", "Build")]
+    if path.suffix.lower() == ".csproj":
+        return [
+            (".NET", "platform", "Platform"),
+            ("dotnet", "build tool", "Build"),
+        ]
     return []
 
 
