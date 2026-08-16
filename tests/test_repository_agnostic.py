@@ -113,13 +113,49 @@ def test_python_library_keeps_library_specific_plan(tmp_path: Path) -> None:
     readme = generate_readme(project)
 
     assert project.project_type == "library"
-    assert project.packages[0].install_command == "pip install units-core"
+    assert project.packages == []
     assert "installation" in project.section_plan
     assert "testing" in project.section_plan
     assert "interfaces" not in project.section_plan
-    assert "pip install units-core" in readme
+    assert "pip install units-core" not in readme
+    assert "python -m pip install -e ." in readme
     assert "python -m pytest" in readme
     assert "API Endpoints" not in readme
+
+
+def test_unpublished_python_project_uses_uv_setup_not_pypi(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "pyproject.toml",
+        """
+        [project]
+        name = "unpublished-tool"
+        version = "0.1.0"
+
+        [project.scripts]
+        unpublished-tool = "unpublished_tool:main"
+        """,
+    )
+    write(tmp_path / "uv.lock", "version = 1")
+    write(tmp_path / "src" / "unpublished_tool.py", "def main(): pass")
+    write(
+        tmp_path / "README.md",
+        """
+        ## Installation
+
+        ```bash
+        pip install unpublished-tool
+        ```
+        """,
+    )
+
+    project = scan_project(tmp_path)
+    readme = generate_readme(project)
+
+    assert project.packages == []
+    assert "pip install unpublished-tool" not in readme
+    assert "uv sync" in readme
 
 
 def test_node_cli_uses_manifest_bin_and_scripts(tmp_path: Path) -> None:

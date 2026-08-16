@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from readme_gen.detectors.badges import detect_badges
 from readme_gen.scanner import scan_project
 
 
@@ -59,14 +60,11 @@ demo = "demo.main:app"
     assert "pyproject.toml" in project.context_files
     assert "src/demo/main.py" in project.context_files
 
-    assert len(project.packages) == 1
-
-    package_info = project.packages[0]
-
-    assert package_info.ecosystem == "pypi"
-    assert package_info.name == "demo-project"
-    assert package_info.version == "0.1.0"
-    assert package_info.install_command == "pip install demo-project"
+    assert project.packages == []
+    assert any(
+        command.command == "python -m pip install -e ."
+        for command in project.commands
+    )
 
 
 def test_scan_react_project(tmp_path: Path):
@@ -236,3 +234,32 @@ jobs:
 
     assert tests_info.purpose == "testing"
     assert publish_info.purpose == "publishing"
+
+
+def test_scan_project_detects_test_framework_from_dependency_group(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        """
+[project]
+name = "demo"
+version = "0.1.0"
+
+[dependency-groups]
+dev = ["pytest>=9"]
+""".strip(),
+        encoding="utf-8",
+    )
+
+    project = scan_project(tmp_path)
+
+    testing = [
+        technology
+        for technology in project.technologies
+        if technology.category == "testing"
+    ]
+    assert [technology.name for technology in testing] == ["pytest"]
+    assert any(
+        badge.name == "pytest"
+        for badge in detect_badges(project)
+    )

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import PurePosixPath
 
 from readme_gen.formatting.badges import generate_badges
@@ -437,13 +438,19 @@ def render_testing(
 def render_examples(
     project: ProjectInfo,
 ) -> str:
-    if not project.usage_examples:
+    examples = [
+        example
+        for example in project.usage_examples
+        if not _contains_unverified_pypi_install(project, example.code)
+    ]
+
+    if not examples:
         return ""
 
     heading = "Quick Start" if project.project_type == "library" else "Examples"
     lines = [f"## \u26a1 {heading}"]
-    for index, example in enumerate(project.usage_examples, start=1):
-        if len(project.usage_examples) > 1:
+    for index, example in enumerate(examples, start=1):
+        if len(examples) > 1:
             lines.extend(["", f"### Example {index}"])
         lines.extend(
             [
@@ -454,6 +461,37 @@ def render_examples(
             ]
         )
     return "\n".join(lines)
+
+
+def _contains_unverified_pypi_install(
+    project: ProjectInfo,
+    code: str,
+) -> bool:
+    verified_names = {
+        re.sub(r"[-_.]+", "-", package.name).lower()
+        for package in project.packages
+        if package.ecosystem == "pypi"
+    }
+    project_name = re.sub(r"[-_.]+", "-", project.name).lower()
+    if project_name in verified_names:
+        return False
+
+    for line in code.splitlines():
+        match = re.match(
+            r"^\s*(?:\$\s*)?(?:(?:python|python3)\s+-m\s+)?pip\s+install\s+([^\s]+)",
+            line,
+        )
+        if not match:
+            continue
+        package_name = re.split(
+            r"[<>=!~;\[]",
+            match.group(1).strip("'\""),
+            maxsplit=1,
+        )[0]
+        if re.sub(r"[-_.]+", "-", package_name).lower() == project_name:
+            return True
+
+    return False
 
 
 def render_screenshots(

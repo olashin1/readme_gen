@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import re
 import tomllib
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from readme_gen.models import PackageInfo
 
@@ -43,10 +45,11 @@ def detect_python_package(
     root: Path,
 ) -> PackageInfo | None:
     """
-    Detect a Python package from pyproject.toml.
+    Detect a verified PyPI distribution from pyproject.toml.
 
-    Only the standardized [project] table is used. Tool-specific metadata
-    such as Poetry configuration can be added separately later.
+    PEP 621 package metadata describes a local distribution, but does not
+    prove that the distribution has been published. Require an explicit PyPI
+    project URL before offering a public ``pip install <name>`` command.
     """
     manifest_path = (
         root / "pyproject.toml"
@@ -94,6 +97,9 @@ def detect_python_package(
     if not name:
         return None
 
+    if not _has_pypi_project_url(project, name):
+        return None
+
     version = project.get(
         "version"
     )
@@ -118,6 +124,31 @@ def detect_python_package(
             f"pip install {name}"
         ),
     )
+
+
+def _has_pypi_project_url(project: dict, name: str) -> bool:
+    urls = project.get("urls")
+    if not isinstance(urls, dict):
+        return False
+
+    normalized_name = re.sub(r"[-_.]+", "-", name).lower()
+    for value in urls.values():
+        if not isinstance(value, str):
+            continue
+        parsed = urlsplit(value.strip())
+        if parsed.scheme != "https" or parsed.hostname not in {
+            "pypi.org",
+            "pypi.python.org",
+        }:
+            continue
+        path_parts = [part for part in parsed.path.split("/") if part]
+        if len(path_parts) < 2 or path_parts[0].lower() not in {"project", "pypi"}:
+            continue
+        url_name = re.sub(r"[-_.]+", "-", path_parts[1]).lower()
+        if url_name == normalized_name:
+            return True
+
+    return False
 
 
 def detect_npm_package(root: Path) -> PackageInfo | None:

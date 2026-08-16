@@ -356,6 +356,8 @@ def _manifest_dependencies(path: Path) -> list[str]:
             optional = data.get("project", {}).get("optional-dependencies", {})
             for values in optional.values():
                 dependencies.extend(values)
+            for values in data.get("dependency-groups", {}).values():
+                dependencies.extend(values)
             poetry = data.get("tool", {}).get("poetry", {})
             dependencies.extend(poetry.get("dependencies", {}).keys())
             dependencies.extend(poetry.get("group", {}).get("dev", {}).get("dependencies", {}).keys())

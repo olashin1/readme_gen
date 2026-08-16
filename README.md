@@ -4,7 +4,7 @@
 
 **A CLI tool that analyzes a project and generates a README.**
 
-![Typer](https://img.shields.io/badge/Typer-4C566A)
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white) ![uv](https://img.shields.io/badge/uv-DE5FE9?logo=uv&logoColor=white) ![Gemini](https://img.shields.io/badge/Gemini-8E75B2?logo=googlegemini&logoColor=white) ![pytest](https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white)
 
 </div>
 
@@ -15,12 +15,15 @@
 | **Languages**          | Python       |
 | **AI**                 | Gemini       |
 | **CLI Framework**      | Typer        |
+| **Testing**            | pytest       |
 | **Package Management** | uv           |
 
 ## ⬇️ Installation
 
 ```bash
-pip install readme-gen
+git clone https://github.com/olashin1/readme_gen.git
+cd readme_gen
+uv sync
 ```
 
 ## 🚀 Usage
@@ -33,22 +36,8 @@ readme-gen
 
 ## ⚡ Examples
 
-### Example 1
-
-```bash
-pip install readme-gen
-```
-
-### Example 2
-
 ```bash
 readme-gen
-```
-
-### Example 3
-
-```bash
-readme-gen . --debug-metadata
 ```
 
 ## ⚙️ Environment Variables
@@ -76,16 +65,3 @@ readme-gen/
 ├── pyproject.toml  # Python project configuration
 └── README.md  # Project documentation
 ```
-
-## 🧑‍💻 Development
-
-<details>
-<summary>Local development setup</summary>
-
-```bash
-git clone https://github.com/olashin1/readme_gen.git
-cd readme_gen
-uv sync
-```
-
-</details>

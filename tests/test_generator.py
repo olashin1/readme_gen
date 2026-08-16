@@ -201,6 +201,28 @@ def test_generator_renders_centered_header(
     assert "</div>" in readme
 
 
+def test_generator_renders_selected_badges_beneath_tagline(
+    tmp_path: Path,
+) -> None:
+    create_project_files(tmp_path)
+
+    readme = generate_readme(make_project(tmp_path))
+
+    tagline_position = readme.index("**Turn software repositories")
+    language_position = readme.index("![Python]")
+    package_manager_position = readme.index("![uv]")
+    license_position = readme.index("![License]")
+    header_end = readme.index("</div>")
+
+    assert (
+        tagline_position
+        < language_position
+        < package_manager_position
+        < license_position
+        < header_end
+    )
+
+
 def test_generator_prefers_ai_tagline(
     tmp_path: Path,
 ) -> None:

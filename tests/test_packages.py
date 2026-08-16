@@ -17,6 +17,9 @@ def test_detect_python_package(
 name = "Flask"
 version = "3.1.0"
 description = "A web framework"
+
+[project.urls]
+PyPI = "https://pypi.org/project/Flask/"
 """.strip(),
         encoding="utf-8",
     )
@@ -43,6 +46,9 @@ def test_detect_python_package_without_version(
 [project]
 name = "demo-package"
 dynamic = ["version"]
+
+[project.urls]
+Package = "https://pypi.org/project/demo-package"
 """.strip(),
         encoding="utf-8",
     )
@@ -109,6 +115,21 @@ version = "1.0.0"
     )
 
 
+def test_detect_python_package_returns_none_without_pypi_evidence(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        """
+[project]
+name = "unpublished-package"
+version = "0.1.0"
+""".strip(),
+        encoding="utf-8",
+    )
+
+    assert detect_python_package(tmp_path) is None
+
+
 def test_detect_python_package_handles_invalid_toml(
     tmp_path: Path,
 ) -> None:
@@ -140,6 +161,9 @@ def test_detect_packages_returns_python_package(
 [project]
 name = "demo"
 version = "0.1.0"
+
+[project.urls]
+PyPI = "https://pypi.org/project/demo/"
 """.strip(),
         encoding="utf-8",
     )

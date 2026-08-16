@@ -67,6 +67,17 @@ class TechnologyInfo:
 
 
 @dataclass(frozen=True, slots=True)
+class BadgeInfo:
+    """A repository-supported badge selected for the README header."""
+
+    name: str
+    image_url: str
+    category: str
+    priority: int
+    link_target: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class ProjectCommand:
     kind: str
     command: str
