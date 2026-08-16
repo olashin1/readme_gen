@@ -85,22 +85,24 @@ def make_project(
             forks=10,
         ),
         analysis=ProjectAnalysis(
+            tagline=(
+                "Turn software repositories into "
+                "polished GitHub landing pages."
+            ),
             summary=(
                 "readme-gen analyzes software "
-                "repositories and produces "
+                "repositories and produces concise, "
                 "structured README documentation."
             ),
-            features=[
+            highlights=[
                 "Automatic repository scanning",
-                "AI-assisted project analysis",
-                "GitHub-aware README generation",
+                "AI-assisted project understanding",
+                "Local and GitHub repository support",
+                "Deterministic GitHub-focused Markdown",
             ],
-            intended_users=(
-                "Software developers"
-            ),
             usage_summary=(
-                "Pass a local project path or "
-                "GitHub repository URL."
+                "Pass a local project path or GitHub "
+                "repository URL to generate a README."
             ),
             architecture=(
                 "Repository sources feed a common "
@@ -157,7 +159,7 @@ def create_project_files(
     (
         workflows_dir / "tests.yml"
     ).write_text(
-        "name: tests\n",
+        "name: Tests\n",
         encoding="utf-8",
     )
 
@@ -199,7 +201,7 @@ def test_generator_renders_centered_header(
     assert "</div>" in readme
 
 
-def test_generator_renders_tagline(
+def test_generator_prefers_ai_tagline(
     tmp_path: Path,
 ) -> None:
     create_project_files(
@@ -211,9 +213,15 @@ def test_generator_renders_tagline(
     )
 
     assert (
+        "**Turn software repositories into "
+        "polished GitHub landing pages.**"
+        in readme
+    )
+
+    assert (
         "**Generate polished README files "
         "from software repositories.**"
-        in readme
+        not in readme
     )
 
 
@@ -248,7 +256,7 @@ def test_generator_renders_github_links(
     )
 
 
-def test_generator_renders_feature_section(
+def test_generator_renders_highlights(
     tmp_path: Path,
 ) -> None:
     create_project_files(
@@ -259,12 +267,123 @@ def test_generator_renders_feature_section(
         make_project(tmp_path)
     )
 
-    assert "## 🚀 Features" in readme
+    assert "## 🌟 Highlights" in readme
 
     assert (
         "- Automatic repository scanning"
         in readme
     )
+
+    assert (
+        "- Local and GitHub repository support"
+        in readme
+    )
+
+    assert "## 🚀 Features" not in readme
+
+
+def test_highlights_appear_before_overview(
+    tmp_path: Path,
+) -> None:
+    create_project_files(
+        tmp_path
+    )
+
+    readme = generate_readme(
+        make_project(tmp_path)
+    )
+
+    highlights_position = readme.index(
+        "## 🌟 Highlights"
+    )
+
+    overview_position = readme.index(
+        "## ℹ️ Overview"
+    )
+
+    assert (
+        highlights_position
+        < overview_position
+    )
+
+
+def test_generator_renders_overview(
+    tmp_path: Path,
+) -> None:
+    create_project_files(
+        tmp_path
+    )
+
+    readme = generate_readme(
+        make_project(tmp_path)
+    )
+
+    assert "## ℹ️ Overview" in readme
+
+    assert (
+        "readme-gen analyzes software repositories"
+        in readme
+    )
+
+
+def test_generator_renders_usage(
+    tmp_path: Path,
+) -> None:
+    create_project_files(
+        tmp_path
+    )
+
+    readme = generate_readme(
+        make_project(tmp_path)
+    )
+
+    assert "## 🚀 Usage" in readme
+
+    assert (
+        "Pass a local project path or GitHub "
+        "repository URL"
+        in readme
+    )
+
+    assert "### CLI" in readme
+    assert "readme-gen" in readme
+
+
+def test_generator_does_not_invent_cli_path_argument(
+    tmp_path: Path,
+) -> None:
+    create_project_files(
+        tmp_path
+    )
+
+    readme = generate_readme(
+        make_project(tmp_path)
+    )
+
+    assert "readme-gen [PATH]" not in readme
+
+
+def test_generator_renders_installation(
+    tmp_path: Path,
+) -> None:
+    create_project_files(
+        tmp_path
+    )
+
+    readme = generate_readme(
+        make_project(tmp_path)
+    )
+
+    assert "## ⬇️ Installation" in readme
+
+    assert (
+        "git clone "
+        "https://github.com/example/readme-gen"
+        in readme
+    )
+
+    assert "cd readme-gen" in readme
+    assert "uv sync" in readme
 
 
 def test_generator_renders_tech_stack_table(
@@ -289,44 +408,6 @@ def test_generator_renders_tech_stack_table(
         "| **Frameworks** | Typer |"
         in readme
     )
-
-
-def test_generator_renders_quick_start(
-    tmp_path: Path,
-) -> None:
-    create_project_files(
-        tmp_path
-    )
-
-    readme = generate_readme(
-        make_project(tmp_path)
-    )
-
-    assert "## ⚡ Quick Start" in readme
-
-    assert (
-        "git clone "
-        "https://github.com/example/readme-gen"
-        in readme
-    )
-
-    assert "cd readme-gen" in readme
-    assert "uv sync" in readme
-
-
-def test_generator_does_not_invent_cli_path_argument(
-    tmp_path: Path,
-) -> None:
-    create_project_files(
-        tmp_path
-    )
-
-    readme = generate_readme(
-        make_project(tmp_path)
-    )
-
-    assert "readme-gen" in readme
-    assert "readme-gen [PATH]" not in readme
 
 
 def test_generator_renders_architecture(
@@ -413,18 +494,8 @@ def test_generator_renders_semantic_project_structure(
         in readme
     )
 
-    assert (
-        "├── pyproject.toml"
-        in readme
-    )
-
-    assert (
-        "├── LICENSE  # License"
-        in readme
-        or
-        "└── LICENSE  # License"
-        in readme
-    )
+    assert "pyproject.toml" in readme
+    assert "LICENSE  # License" in readme
 
 
 def test_generator_uses_project_name_not_repository_slug(

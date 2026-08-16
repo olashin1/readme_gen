@@ -4,14 +4,15 @@ from collections.abc import Callable
 
 from readme_gen.formatting.sections import (
     render_architecture,
-    render_features,
     render_header,
+    render_highlights,
+    render_installation,
     render_license,
     render_overview,
-    render_quick_start,
     render_repository_info,
     render_structure,
     render_tech_stack,
+    render_usage,
 )
 from readme_gen.models import ProjectInfo
 
@@ -27,9 +28,10 @@ DEFAULT_LAYOUT: tuple[
     ...,
 ] = (
     render_header,
+    render_highlights,
     render_overview,
-    render_features,
-    render_quick_start,
+    render_usage,
+    render_installation,
     render_tech_stack,
     render_architecture,
     render_structure,
@@ -43,9 +45,10 @@ CLI_LAYOUT: tuple[
     ...,
 ] = (
     render_header,
+    render_highlights,
     render_overview,
-    render_features,
-    render_quick_start,
+    render_installation,
+    render_usage,
     render_tech_stack,
     render_architecture,
     render_structure,
@@ -59,9 +62,10 @@ LIBRARY_LAYOUT: tuple[
     ...,
 ] = (
     render_header,
+    render_highlights,
     render_overview,
-    render_features,
-    render_quick_start,
+    render_installation,
+    render_usage,
     render_architecture,
     render_tech_stack,
     render_structure,
@@ -75,10 +79,11 @@ APPLICATION_LAYOUT: tuple[
     ...,
 ] = (
     render_header,
+    render_highlights,
     render_overview,
-    render_features,
+    render_usage,
+    render_installation,
     render_tech_stack,
-    render_quick_start,
     render_architecture,
     render_structure,
     render_repository_info,
@@ -90,10 +95,10 @@ def render_readme(
     project: ProjectInfo,
 ) -> str:
     """
-    Render a complete GitHub-oriented README.
+    Render a complete GitHub landing-page README.
 
-    The project's detected type determines the section ordering while each
-    section remains responsible for its own Markdown representation.
+    Project type controls section ordering while individual section renderers
+    remain responsible for Markdown presentation.
     """
     layout = choose_layout(
         project

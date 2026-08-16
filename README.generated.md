@@ -2,7 +2,7 @@
 
 # Flask
 
-**A simple framework for building complex web applications.**
+**A micro web framework for Python designed for simplicity and extensibility.**
 
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white) ![License](https://img.shields.io/badge/license-BSD--3--Clause-blue) [![Lock inactive closed issues](https://github.com/pallets/flask/actions/workflows/lock.yaml/badge.svg)](https://github.com/pallets/flask/actions/workflows/lock.yaml) [![GitHub Stars](https://img.shields.io/github/stars/pallets/flask?style=flat)](https://github.com/pallets/flask/stargazers)
 
@@ -10,27 +10,20 @@
 
 </div>
 
-## ✨ Overview
+## 🌟 Highlights
 
-Flask is a lightweight Python web framework built on the Werkzeug WSGI toolkit and Jinja2 template engine, designed for developing web applications and APIs.
+- Core utility built on the Werkzeug WSGI toolkit and Jinja2 template engine for reliable request handling and flexible rendering.
+- Modular application architecture via Blueprints, allowing developers to organize large codebases into reusable components.
+- Integrated development server and a browser-based debugger to streamline the local development and troubleshooting cycle.
+- Extensive support for testing with a built-in test client for simulating HTTP requests and a runner for CLI commands.
+- Support for asynchronous request handlers and background tasks to handle concurrent operations efficiently.
+- Native CLI integration via Click for creating custom administrative commands and managing development workflows.
 
-## 🚀 Features
+## ℹ️ Overview
 
-- WSGI-compliant application object for handling web requests.
-- Integrated routing system based on Werkzeug with support for URL variables and converters.
-- Templating engine integration using Jinja2 with template inheritance support.
-- Blueprint system for modular application design and route organization.
-- Application and request context management using context locals (g, request, session, current_app).
-- Extensible configuration system supporting object, file, and environment-based settings.
-- CLI integration via Click for application management and custom command registration.
-- Support for asynchronous route handlers and error handlers via asgiref.
-- Built-in session management using secure cookie-based signed headers.
-- Signals support via the Blinker library for application lifecycle hooks.
-- Comprehensive testing suite utilities including FlaskClient and FlaskCliRunner.
+Flask is a lightweight web application framework that provides the essentials for building web services without enforcing a specific project structure or database layer. It is designed to scale from single-file prototypes to complex modular applications, offering a minimal core while remaining highly extensible through a robust ecosystem of third-party integrations.
 
-## ⚡ Quick Start
-
-### Installation
+## ⬇️ Installation
 
 ```bash
 git clone https://github.com/pallets/flask
@@ -38,9 +31,11 @@ cd flask
 uv sync
 ```
 
-### Usage
+## 🚀 Usage
 
-Applications are initialized via the Flask class and routes are defined using decorators such as @app.route(). Deployment is managed through the 'flask' CLI, which uses environment variables like FLASK_APP to locate the application. It supports development servers via 'flask run' and production deployment through WSGI containers like Gunicorn or Waitress.
+Developers typically initialize a Flask application instance and use decorators to map URL routes to view functions. Interaction with the framework is primarily handled through the 'flask' CLI for running development servers, managing shell contexts, and executing custom scripts. Configuration is managed via Python objects, environment variables, or .env files, and dependencies are typically resolved using tools like uv.
+
+### CLI
 
 ```bash
 flask
@@ -48,14 +43,14 @@ flask
 
 ## 🛠️ Tech Stack
 
-| Category               | Technologies |
-| ---------------------- | ------------ |
-| **Languages**          | Python       |
-| **Package Management** | uv           |
+| Category | Technologies |
+| --- | --- |
+| **Languages** | Python |
+| **Package Management** | uv |
 
 ## 🏗️ Architecture
 
-The framework uses a layered architecture where the core 'Flask' object inherits from a 'Scaffold' base class. It relies on Werkzeug for HTTP abstractions and routing, Jinja2 for templating, and ItsDangerous for secure data signing. Logic is partially organized into 'sans-io' components to separate core application logic from the WSGI interface.
+The framework is built as a WSGI application where the central Flask object acts as a registry for routes, configurations, and middleware. It utilizes an internal context system—comprising Application and Request contexts—to manage global state safely across the request lifecycle. The architecture is modular by design, using a 'sans-io' base for core logic and 'Blueprints' to partition application logic into distinct, pluggable units.
 
 ## 📁 Project Structure
 
@@ -75,10 +70,10 @@ flask/
 
 ## 🔗 Repository
 
-|                    |                                                                            |
-| ------------------ | -------------------------------------------------------------------------- |
-| **Default branch** | `main`                                                                     |
-| **Topics**         | `flask`, `jinja`, `pallets`, `python`, `web-framework`, `werkzeug`, `wsgi` |
+| | |
+| --- | --- |
+| **Default branch** | `main` |
+| **Topics** | `flask`, `jinja`, `pallets`, `python`, `web-framework`, `werkzeug`, `wsgi` |
 
 ## 📄 License
 

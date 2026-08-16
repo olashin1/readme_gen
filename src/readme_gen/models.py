@@ -1,15 +1,46 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ProjectAnalysis(BaseModel):
-    summary: str
-    features: list[str]
-    intended_users: str
-    usage_summary: str
-    architecture: str
+    tagline: str = Field(
+        description=(
+            "A concise one-sentence tagline suitable for display directly "
+            "beneath the project title in a GitHub README."
+        )
+    )
+
+    summary: str = Field(
+        description=(
+            "A concise overview explaining what the project does, what "
+            "problem it solves, and who it is useful for."
+        )
+    )
+
+    highlights: list[str] = Field(
+        description=(
+            "Four to six concise, compelling project highlights suitable "
+            "for a GitHub landing-page README. Focus on the project's most "
+            "important user-facing strengths rather than exhaustive "
+            "implementation details."
+        )
+    )
+
+    usage_summary: str = Field(
+        description=(
+            "A short explanation of how a user typically interacts with or "
+            "runs the project."
+        )
+    )
+
+    architecture: str = Field(
+        description=(
+            "A high-level explanation of the project's architecture and "
+            "major components without excessive implementation detail."
+        )
+    )
 
 
 @dataclass

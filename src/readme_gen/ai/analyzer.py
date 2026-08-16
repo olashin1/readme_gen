@@ -8,10 +8,21 @@ from readme_gen.models import ProjectAnalysis, ProjectInfo
 MODEL_NAME = "gemini-3-flash-preview"
 
 
-def analyze_project(project: ProjectInfo) -> ProjectAnalysis:
+def analyze_project(
+    project: ProjectInfo,
+) -> ProjectAnalysis:
+    """
+    Analyze a scanned software project with Gemini.
+
+    Gemini is responsible for understanding what the project does and
+    producing structured landing-page content. README formatting and layout
+    remain deterministic and are handled elsewhere in readme-gen.
+    """
     client = get_gemini_client()
 
-    prompt = build_project_prompt(project)
+    prompt = build_project_prompt(
+        project
+    )
 
     response = client.models.generate_content(
         model=MODEL_NAME,
@@ -19,8 +30,10 @@ def analyze_project(project: ProjectInfo) -> ProjectAnalysis:
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
             response_schema=ProjectAnalysis,
-            automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                disable=True,
+            automatic_function_calling=(
+                types.AutomaticFunctionCallingConfig(
+                    disable=True,
+                )
             ),
         ),
     )
@@ -30,4 +43,11 @@ def analyze_project(project: ProjectInfo) -> ProjectAnalysis:
             "Gemini returned no structured project analysis."
         )
 
-    return response.parsed # type: ignore
+    try:
+        return ProjectAnalysis.model_validate(
+            response.parsed
+        )
+    except Exception as error:
+        raise RuntimeError(
+            "Gemini returned an invalid structured project analysis."
+        ) from error

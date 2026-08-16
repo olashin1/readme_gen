@@ -58,52 +58,167 @@ def render_header(
     return "\n".join(lines)
 
 
+def render_highlights(
+    project: ProjectInfo,
+) -> str:
+    """
+    Render the project's most important landing-page selling points.
+    """
+    if not project.analysis:
+        return ""
+
+    highlights = [
+        highlight.strip()
+        for highlight in project.analysis.highlights
+        if highlight.strip()
+    ]
+
+    if not highlights:
+        return ""
+
+    lines = [
+        "## 🌟 Highlights",
+        "",
+    ]
+
+    lines.extend(
+        f"- {highlight}"
+        for highlight in highlights
+    )
+
+    return "\n".join(lines)
+
+
 def render_overview(
     project: ProjectInfo,
 ) -> str:
-    summary = None
+    """
+    Render the concise project overview.
+    """
+    if not project.analysis:
+        return ""
 
-    if project.analysis:
-        summary = project.analysis.summary.strip()
+    summary = project.analysis.summary.strip()
 
     if not summary:
         return ""
 
     return "\n".join(
         [
-            "## ✨ Overview",
+            "## ℹ️ Overview",
             "",
             summary,
         ]
     )
 
 
-def render_features(
+def render_usage(
     project: ProjectInfo,
 ) -> str:
-    if not project.analysis:
-        return ""
+    """
+    Render a concise explanation of how users interact with the project.
 
-    features = [
-        feature.strip()
-        for feature in project.analysis.features
-        if feature.strip()
-    ]
+    Exact command syntax is only shown when it has been detected
+    deterministically from project metadata.
+    """
+    usage_summary = get_usage_intro(
+        project
+    )
 
-    if not features:
+    cli_commands = list(
+        project.cli_commands.keys()
+    )
+
+    script_commands = get_useful_script_commands(
+        project
+    )
+
+    if not (
+        usage_summary
+        or cli_commands
+        or script_commands
+    ):
         return ""
 
     lines = [
-        "## 🚀 Features",
-        "",
+        "## 🚀 Usage",
     ]
 
-    lines.extend(
-        f"- {feature}"
-        for feature in features
-    )
+    if usage_summary:
+        lines.extend(
+            [
+                "",
+                usage_summary,
+            ]
+        )
+
+    if cli_commands:
+        lines.extend(
+            [
+                "",
+                "### CLI",
+            ]
+        )
+
+        for command in cli_commands:
+            lines.extend(
+                [
+                    "",
+                    "```bash",
+                    command,
+                    "```",
+                ]
+            )
+
+    if script_commands:
+        lines.extend(
+            [
+                "",
+                "### Common Scripts",
+                "",
+                "```bash",
+                *script_commands,
+                "```",
+            ]
+        )
 
     return "\n".join(lines)
+
+
+def render_installation(
+    project: ProjectInfo,
+) -> str:
+    """
+    Render deterministic setup instructions.
+
+    Project-aware user installation will become smarter in the next phase.
+    For now this uses repository and package-manager metadata that has been
+    directly detected from the project.
+    """
+    install_commands = detect_install_commands(
+        project
+    )
+
+    if not install_commands:
+        return ""
+
+    commands = get_clone_commands(
+        project,
+        install_commands,
+    )
+
+    if not commands:
+        return ""
+
+    return "\n".join(
+        [
+            "## ⬇️ Installation",
+            "",
+            "```bash",
+            *commands,
+            "```",
+        ]
+    )
 
 
 def render_tech_stack(
@@ -150,98 +265,6 @@ def render_tech_stack(
     for category, technologies in rows:
         lines.append(
             f"| **{category}** | {technologies} |"
-        )
-
-    return "\n".join(lines)
-
-
-def render_quick_start(
-    project: ProjectInfo,
-) -> str:
-    install_commands = detect_install_commands(
-        project
-    )
-
-    cli_commands = list(
-        project.cli_commands.keys()
-    )
-
-    script_commands = get_useful_script_commands(
-        project
-    )
-
-    if not (
-        install_commands
-        or cli_commands
-        or script_commands
-    ):
-        return ""
-
-    lines = [
-        "## ⚡ Quick Start",
-    ]
-
-    clone_lines = get_clone_commands(
-        project,
-        install_commands,
-    )
-
-    if clone_lines:
-        lines.extend(
-            [
-                "",
-                "### Installation",
-                "",
-                "```bash",
-                *clone_lines,
-                "```",
-            ]
-        )
-
-    usage_intro = get_usage_intro(
-        project
-    )
-
-    if (
-        usage_intro
-        or cli_commands
-        or script_commands
-    ):
-        lines.extend(
-            [
-                "",
-                "### Usage",
-            ]
-        )
-
-    if usage_intro:
-        lines.extend(
-            [
-                "",
-                usage_intro,
-            ]
-        )
-
-    for command in cli_commands:
-        lines.extend(
-            [
-                "",
-                "```bash",
-                command,
-                "```",
-            ]
-        )
-
-    if script_commands:
-        lines.extend(
-            [
-                "",
-                "#### Common scripts",
-                "",
-                "```bash",
-                *script_commands,
-                "```",
-            ]
         )
 
     return "\n".join(lines)
@@ -377,8 +400,8 @@ def get_display_name(
     """
     Return the best human-facing project name.
 
-    Scanner/project metadata is preferred over the repository slug because
-    repository names may be lowercase or otherwise machine-oriented.
+    Project metadata is preferred over the repository slug because repository
+    names may be lowercase or otherwise machine-oriented.
     """
     if project.name:
         return project.name
@@ -395,6 +418,18 @@ def get_display_name(
 def get_tagline(
     project: ProjectInfo,
 ) -> str | None:
+    """
+    Return the best landing-page tagline.
+
+    AI analysis is preferred because it is specifically generated for the
+    README hero. Existing project/repository descriptions remain fallbacks.
+    """
+    if project.analysis:
+        tagline = project.analysis.tagline.strip()
+
+        if tagline:
+            return tagline
+
     if project.description:
         return project.description.strip()
 
@@ -402,9 +437,7 @@ def get_tagline(
         project.repository
         and project.repository.description
     ):
-        return (
-            project.repository.description.strip()
-        )
+        return project.repository.description.strip()
 
     return None
 
@@ -630,8 +663,8 @@ def get_license_name(
     """
     Return the best human-facing license name.
 
-    A real SPDX/license name from repository metadata is preferred over a
-    scanner value that merely identifies a license filename.
+    Repository SPDX metadata is preferred over scanner values because local
+    detection may only identify a filename such as LICENSE.txt.
     """
     repository = project.repository
 
@@ -642,12 +675,10 @@ def get_license_name(
         if repository.license_name:
             return repository.license_name
 
-    if project.license and not looks_like_license_filename(
-        project.license
-    ):
+    if project.license:
         return project.license
 
-    return project.license
+    return None
 
 
 def get_license_link(
@@ -693,21 +724,3 @@ def find_license_file(
             return str(path)
 
     return None
-
-
-def looks_like_license_filename(
-    value: str,
-) -> bool:
-    """
-    Return True when a detected license value looks like a filename rather
-    than a license identifier.
-    """
-    normalized = value.strip().lower()
-
-    return normalized.startswith(
-        (
-            "license.",
-            "licence.",
-            "copying.",
-        )
-    )
