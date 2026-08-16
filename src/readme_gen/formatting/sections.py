@@ -118,10 +118,18 @@ def render_usage(
         project
     )
 
+    detected_commands = [
+        command
+        for command in project.commands
+        if command.kind != "install"
+        and command.command not in cli_commands
+    ]
+
     if not (
         usage_summary
         or cli_commands
         or script_commands
+        or detected_commands
     ):
         return ""
 
@@ -167,6 +175,22 @@ def render_usage(
             ]
         )
 
+    if detected_commands:
+        lines.extend(
+            [
+                "",
+                "### Project Commands",
+                "",
+                "| Purpose | Command |",
+                "| --- | --- |",
+            ]
+        )
+        for command in detected_commands[:12]:
+            purpose = (command.name or command.kind).replace("-", " ").title()
+            lines.append(
+                f"| {purpose} | `{command.command}` |"
+            )
+
     return "\n".join(lines)
 
 
@@ -188,9 +212,7 @@ def render_installation(
             ]
         )
 
-    commands = detect_install_commands(
-        project
-    )
+    commands = get_detected_install_commands(project) or detect_install_commands(project)
 
     if not commands:
         return ""
@@ -217,12 +239,10 @@ def render_installation(
 def render_development(
     project: ProjectInfo,
 ) -> str:
-    if not project.packages:
+    if not project.packages and not project.commands:
         return ""
 
-    install_commands = detect_install_commands(
-        project
-    )
+    install_commands = get_detected_install_commands(project) or detect_install_commands(project)
 
     if not install_commands:
         return ""
@@ -264,13 +284,31 @@ def render_tech_stack(
             )
         )
 
-    if project.frameworks:
+    if project.technology_roles:
+        for role, technologies in project.technology_roles.items():
+            rows.append(
+                (
+                    role,
+                    ", ".join(technologies),
+                )
+            )
+
+    elif project.frameworks:
         rows.append(
             (
                 "Frameworks",
                 ", ".join(project.frameworks),
             )
         )
+
+    if project.libraries and not project.technology_roles:
+        rows.append(("Libraries", ", ".join(project.libraries)))
+
+    if project.databases and "Database" not in project.technology_roles:
+        rows.append(("Database", ", ".join(project.databases)))
+
+    if project.external_services and not project.technology_roles:
+        rows.append(("External Services", ", ".join(project.external_services)))
 
     if project.package_managers:
         rows.append(
@@ -297,6 +335,80 @@ def render_tech_stack(
             f"| **{category}** | {technologies} |"
         )
 
+    return "\n".join(lines)
+
+
+def render_environment_variables(
+    project: ProjectInfo,
+) -> str:
+    if not project.environment_variables:
+        return ""
+
+    lines = [
+        "## \u2699\ufe0f Environment Variables",
+        "",
+        "The application reads the following variable names. Values are not included in this README.",
+        "",
+        "| Variable | Detected in |",
+        "| --- | --- |",
+    ]
+    for variable in project.environment_variables:
+        sources = ", ".join(f"`{source}`" for source in variable.sources)
+        lines.append(f"| `{variable.name}` | {sources} |")
+    return "\n".join(lines)
+
+
+def render_api_routes(
+    project: ProjectInfo,
+) -> str:
+    if not project.api_routes:
+        return ""
+
+    lines = [
+        "## \ud83d\udd0c API Endpoints",
+        "",
+        "| Method | Path | Handler |",
+        "| --- | --- | --- |",
+    ]
+    for route in project.api_routes:
+        handler = f"`{route.handler}`" if route.handler else "\u2014"
+        lines.append(f"| `{route.method}` | `{route.path}` | {handler} |")
+    return "\n".join(lines)
+
+
+def render_examples(
+    project: ProjectInfo,
+) -> str:
+    if not project.usage_examples:
+        return ""
+
+    heading = "Quick Start" if project.project_type == "library" else "Examples"
+    lines = [f"## \u26a1 {heading}"]
+    for index, example in enumerate(project.usage_examples, start=1):
+        if len(project.usage_examples) > 1:
+            lines.extend(["", f"### Example {index}"])
+        lines.extend(
+            [
+                "",
+                f"```{example.language}",
+                example.code,
+                "```",
+            ]
+        )
+    return "\n".join(lines)
+
+
+def render_screenshots(
+    project: ProjectInfo,
+) -> str:
+    screenshots = [asset for asset in project.assets if asset.kind == "screenshot"]
+    if not screenshots:
+        return ""
+
+    lines = ["## \ud83d\uddbc\ufe0f Screenshots"]
+    for index, asset in enumerate(screenshots[:4], start=1):
+        label = "Project screenshot" if len(screenshots) == 1 else f"Project screenshot {index}"
+        lines.extend(["", f"![{label}]({asset.path})"])
     return "\n".join(lines)
 
 
@@ -594,6 +706,16 @@ def detect_install_commands(
     return commands
 
 
+def get_detected_install_commands(
+    project: ProjectInfo,
+) -> list[str]:
+    return [
+        command.command
+        for command in project.commands
+        if command.kind == "install"
+    ]
+
+
 def get_usage_intro(
     project: ProjectInfo,
 ) -> str:
@@ -610,6 +732,9 @@ def get_usage_intro(
 def get_useful_script_commands(
     project: ProjectInfo,
 ) -> list[str]:
+    if any(command.kind != "install" for command in project.commands):
+        return []
+
     commands: list[str] = []
 
     preferred_names = (

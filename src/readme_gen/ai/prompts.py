@@ -1,3 +1,5 @@
+import json
+import re
 from pathlib import Path
 
 from readme_gen.models import ProjectInfo
@@ -5,23 +7,29 @@ from readme_gen.models import ProjectInfo
 
 def build_project_prompt(project: ProjectInfo) -> str:
     context = build_context(project)
-
-    repository_context = build_repository_context(project)
+    metadata = json.dumps(
+        build_metadata_payload(project),
+        indent=2,
+        ensure_ascii=False,
+    )
 
     return f"""
-You are analyzing a software repository to produce content for a polished GitHub README landing page.
+You are composing factual prose for a polished GitHub README.
 
 Your goal is to help a developer who has just opened the repository understand the project quickly.
 
 Important rules:
-- Only make claims supported by the supplied repository metadata or file contents.
+- Treat the structured metadata as the authoritative source of repository facts.
+- Only make claims supported by the supplied metadata or selected file excerpts.
 - Do not invent features, commands, flags, integrations, workflows, compatibility claims, or usage patterns.
+- Never turn a low-confidence clue or filename into a definite feature claim.
 - Distinguish between what this specific project currently does and what its tools or frameworks are generally capable of doing.
 - If something is uncertain, omit it rather than guessing.
 - Keep the content concise and easy to skim.
 - Write for a technical audience without assuming deep familiarity with the project.
 - Prefer clear, direct language over promotional hype.
-- Avoid vague marketing phrases such as "revolutionary", "cutting-edge", "powerful", or "next-generation".
+- Avoid vague phrases such as "comprehensive solution", "robust application", "seamless experience", "powerful platform", "revolutionary", "cutting-edge", and "next-generation".
+- Prefer short sentences, concrete nouns, and terminology found in the metadata.
 - Do not write exhaustive API documentation.
 - Focus on what would be useful on the main GitHub repository page.
 - Do not mention that you are analyzing a repository.
@@ -42,7 +50,8 @@ Return structured content with the following fields:
    - Avoid implementation-level details unless they are central to the project's identity.
 
 3. highlights
-   - Return 4 to 6 concise bullet-style statements.
+   - Return no more than 6 concise bullet-style statements.
+   - Return an empty list if user-facing features are not supported.
    - Treat these as the most important reasons someone would care about the project.
    - Prioritize user-facing capabilities and distinctive strengths.
    - Do not create a long exhaustive feature list.
@@ -61,42 +70,103 @@ Return structured content with the following fields:
    - Avoid excessive implementation detail.
    - Keep this useful for someone trying to understand the codebase at a glance.
 
-Project metadata:
+Structured repository metadata (JSON):
 
-Name: {project.name}
-Existing description: {project.description or "None"}
-Project type: {project.project_type or "Unknown"}
-Languages: {", ".join(project.languages) or "Unknown"}
-Frameworks: {", ".join(project.frameworks) or "None"}
-Package managers: {", ".join(project.package_managers) or "Unknown"}
+```json
+{metadata}
+```
 
-Repository metadata:
-
-{repository_context}
-
-CLI commands:
-{format_mapping(project.cli_commands)}
-
-Package scripts:
-{format_mapping(project.package_scripts)}
-
-Dependencies:
-{format_list(project.dependencies)}
-
-Dev dependencies:
-{format_list(project.dev_dependencies)}
-
-Detected GitHub Actions workflows:
-{format_workflows(project)}
-
-Repository structure:
-
-{chr(10).join(project.directory_tree)}
-
-Selected repository context:
+Selected repository excerpts for understanding purpose only. Do not use an
+excerpt to contradict or replace structured facts:
 
 {context}
 """.strip()
+
+
+def build_metadata_payload(project: ProjectInfo) -> dict[str, object]:
+    repository = project.repository
+    payload: dict[str, object] = {
+        "name": project.name,
+        "description": project.description,
+        "project_type": project.project_type,
+        "languages": project.languages,
+        "package_managers": project.package_managers,
+        "dependencies": project.dependencies,
+        "development_dependencies": project.dev_dependencies,
+        "cli_entry_points": project.cli_commands,
+        "package_scripts": project.package_scripts,
+        "technologies": [
+            {
+                "name": technology.name,
+                "category": technology.category,
+                "role": technology.role,
+                "evidence": [
+                    {
+                        "source": evidence.source,
+                        "kind": evidence.kind,
+                        "confidence": evidence.confidence.value,
+                    }
+                    for evidence in technology.evidence
+                ],
+            }
+            for technology in project.technologies
+        ],
+        "technology_roles": project.technology_roles,
+        "commands": [
+            {
+                "kind": command.kind,
+                "name": command.name,
+                "command": command.command,
+                "source": command.source,
+            }
+            for command in project.commands
+        ],
+        "environment_variables": [
+            {
+                "name": variable.name,
+                "sources": list(variable.sources),
+            }
+            for variable in project.environment_variables
+        ],
+        "api_routes": [
+            {
+                "method": route.method,
+                "path": route.path,
+                "handler": route.handler,
+                "source": route.source,
+            }
+            for route in project.api_routes
+        ],
+        "assets": [
+            {"path": asset.path, "kind": asset.kind}
+            for asset in project.assets
+        ],
+        "features": project.features,
+        "source_directories": project.source_dirs,
+        "test_directories": project.test_dirs,
+        "project_structure": project.directory_tree,
+        "workflows": [
+            {
+                "name": workflow.name,
+                "purpose": workflow.purpose,
+                "path": workflow.path,
+            }
+            for workflow in project.workflows
+        ],
+    }
+    if repository is not None:
+        payload["repository"] = {
+            "url": repository.url,
+            "owner": repository.owner,
+            "name": repository.name,
+            "description": repository.description,
+            "homepage": repository.homepage,
+            "topics": repository.topics,
+            "default_branch": repository.default_branch,
+            "primary_language": repository.primary_language,
+            "license": repository.license_spdx_id or repository.license_name,
+        }
+    return payload
 
 
 def build_repository_context(
@@ -134,7 +204,10 @@ def build_context(project: ProjectInfo) -> str:
     for relative_path in project.context_files:
         path = project.root / relative_path
 
-        contents = read_context_file(path)
+        contents = read_context_file(
+            path,
+            redact_environment=path.name.startswith(".env"),
+        )
 
         if contents is None:
             continue
@@ -155,6 +228,7 @@ def build_context(project: ProjectInfo) -> str:
 def read_context_file(
     path: Path,
     max_chars: int = 12_000,
+    redact_environment: bool = False,
 ) -> str | None:
     try:
         contents = path.read_text(
@@ -164,6 +238,9 @@ def read_context_file(
     except OSError:
         return None
 
+    if redact_environment:
+        contents = redact_environment_values(contents)
+
     if len(contents) > max_chars:
         contents = (
             contents[:max_chars]
@@ -171,6 +248,18 @@ def read_context_file(
         )
 
     return contents
+
+
+def redact_environment_values(contents: str) -> str:
+    lines: list[str] = []
+    pattern = re.compile(
+        r"^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=",
+    )
+    for line in contents.splitlines():
+        match = pattern.match(line)
+        if match:
+            lines.append(f"{match.group(1)}=<redacted>")
+    return "\n".join(lines)
 
 
 def format_mapping(values: dict[str, str]) -> str:

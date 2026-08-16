@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from readme_gen.detectors.path_filters import is_test_file
+
 
 SOURCE_DIR_NAMES = {
     "src",
@@ -27,6 +29,12 @@ IMPORTANT_FILE_NAMES = {
     "Dockerfile",
     ".env.example",
     "Makefile",
+    "requirements.txt",
+    "Cargo.toml",
+    "go.mod",
+    "CMakeLists.txt",
+    "tailwind.config.js",
+    "tailwind.config.ts",
     "README.md",
 }
 
@@ -39,19 +47,27 @@ IGNORED_DIRS = {
     ".pytest_cache",
     ".mypy_cache",
     ".ruff_cache",
+    ".cache",
+    ".nox",
+    ".tox",
     ".next",
     ".idea",
     ".vscode",
     "dist",
     "build",
     "coverage",
+    "htmlcov",
 }
 
 IGNORED_FILES = {
     ".env",
+    ".DS_Store",
     "README.generated.md",
     ".coverage",
 }
+
+MAX_TREE_CHILDREN = 30
+MAX_TREE_LINES = 200
 
 
 def detect_structure(
@@ -73,6 +89,8 @@ def detect_structure(
             test_dirs.append(item.name)
 
     for file in files:
+        if is_test_file(root, file):
+            continue
         if file.name in IMPORTANT_FILE_NAMES:
             important_files.append(
                 file.relative_to(root).as_posix()
@@ -109,7 +127,7 @@ def _walk_tree(
     depth: int,
     max_depth: int,
 ) -> None:
-    if depth >= max_depth:
+    if depth >= max_depth or len(lines) >= MAX_TREE_LINES:
         return
 
     items = [
@@ -126,7 +144,11 @@ def _walk_tree(
         )
     )
 
+    items = items[:MAX_TREE_CHILDREN]
+
     for index, item in enumerate(items):
+        if len(lines) >= MAX_TREE_LINES:
+            return
         is_last = index == len(items) - 1
 
         branch = "└── " if is_last else "├── "

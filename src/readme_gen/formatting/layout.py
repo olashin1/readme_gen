@@ -3,14 +3,18 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from readme_gen.formatting.sections import (
+    render_api_routes,
     render_architecture,
     render_development,
+    render_environment_variables,
+    render_examples,
     render_header,
     render_highlights,
     render_installation,
     render_license,
     render_overview,
     render_repository_info,
+    render_screenshots,
     render_structure,
     render_tech_stack,
     render_usage,
@@ -31,9 +35,13 @@ DEFAULT_LAYOUT: tuple[
     render_header,
     render_highlights,
     render_overview,
+    render_screenshots,
     render_usage,
     render_installation,
     render_tech_stack,
+    render_environment_variables,
+    render_api_routes,
+    render_examples,
     render_architecture,
     render_structure,
     render_repository_info,
@@ -51,7 +59,9 @@ CLI_LAYOUT: tuple[
     render_overview,
     render_installation,
     render_usage,
+    render_examples,
     render_tech_stack,
+    render_environment_variables,
     render_architecture,
     render_structure,
     render_repository_info,
@@ -68,9 +78,11 @@ LIBRARY_LAYOUT: tuple[
     render_highlights,
     render_overview,
     render_installation,
+    render_examples,
     render_usage,
     render_architecture,
     render_tech_stack,
+    render_environment_variables,
     render_structure,
     render_repository_info,
     render_development,
@@ -85,9 +97,34 @@ APPLICATION_LAYOUT: tuple[
     render_header,
     render_highlights,
     render_overview,
-    render_usage,
-    render_installation,
+    render_screenshots,
     render_tech_stack,
+    render_installation,
+    render_usage,
+    render_examples,
+    render_environment_variables,
+    render_api_routes,
+    render_architecture,
+    render_structure,
+    render_repository_info,
+    render_development,
+    render_license,
+)
+
+
+BACKEND_LAYOUT: tuple[
+    SectionRenderer,
+    ...,
+] = (
+    render_header,
+    render_highlights,
+    render_overview,
+    render_tech_stack,
+    render_api_routes,
+    render_environment_variables,
+    render_installation,
+    render_usage,
+    render_examples,
     render_architecture,
     render_structure,
     render_repository_info,
@@ -131,11 +168,10 @@ def choose_layout(
     if project_type == "library":
         return LIBRARY_LAYOUT
 
-    if project_type in {
-        "frontend",
-        "backend",
-        "full-stack",
-    }:
+    if project_type == "backend":
+        return BACKEND_LAYOUT
+
+    if project_type in {"frontend", "full-stack"}:
         return APPLICATION_LAYOUT
 
     return DEFAULT_LAYOUT

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from readme_gen.detectors.path_filters import is_test_file
+
 
 HIGH_PRIORITY_FILES = {
     "pyproject.toml",
@@ -48,6 +50,7 @@ def detect_context_files(
     files: list[Path],
     max_files: int = 12,
 ) -> list[str]:
+    files = [path for path in files if not is_test_file(root, path)]
     selected: list[Path] = []
 
     # Package/configuration files first.

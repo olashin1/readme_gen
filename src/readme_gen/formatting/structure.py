@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from readme_gen.detectors.structure import IGNORED_DIRS
 from readme_gen.models import ProjectInfo
 
 
@@ -173,12 +174,7 @@ def collect_top_level_entries(
         if path.is_dir()
         and not path.name.startswith(".")
         and path.name not in seen
-        and path.name not in {
-            "__pycache__",
-            "node_modules",
-            "dist",
-            "build",
-        }
+        and path.name not in IGNORED_DIRS
     ]
 
     for path in general_directories[

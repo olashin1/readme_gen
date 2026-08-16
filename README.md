@@ -2,150 +2,66 @@
 
 # readme-gen
 
-**A CLI tool that automatically analyzes software repositories to generate polished, structured GitHub README documentation.**
+**Automate project documentation by analyzing local or GitHub repositories.**
 
-![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
-
-**Install once. Generate READMEs from any project.**
+![Typer](https://img.shields.io/badge/Typer-4C566A)
 
 </div>
 
 ## 🌟 Highlights
 
-- Automatic scanning of local paths and public GitHub URLs to detect project metadata.
-- Integrated AI analysis via Google Gemini for generating descriptive project overviews and taglines.
-- Detection of programming languages, frameworks, dependencies, and package managers across ecosystems.
-- Automated GitHub Actions workflow discovery and dynamic status badge generation.
-- Intelligent extraction of usage examples and code snippets from existing documentation.
-- Deterministic Markdown rendering focused on GitHub-ready landing pages with table-based tech stacks.
-- Installable as a system-wide CLI command, allowing `readme-gen` to be run from any project directory.
+- Analyzes both local directories and remote GitHub repositories.
+- Automatically detects technical stacks, including languages, package managers, and dependencies.
+- Identifies project infrastructure such as CLI commands, environment variables, and API routes.
+- Uses Gemini AI to generate descriptive taglines, summaries, and architectural overviews.
+- Supports a --no-ai mode for purely deterministic, metadata-driven generation.
+- Extends project analysis through modular detectors for assets, workflows, and usage examples.
 
 ## ℹ️ Overview
 
-`readme-gen` automates the creation of high-quality project documentation by scanning local or remote codebases to identify their technology stack, project structure, and usage patterns.
+readme-gen is a Python-based CLI tool that scans software repositories to extract technical metadata and generate structured documentation. It identifies project traits such as languages, dependencies, and directory structures, and can optionally use Gemini AI to synthesize this data into concise summaries and highlights. The tool is designed to help developers quickly create factual, high-quality README files that accurately reflect their project's current state.
 
-It resolves repository metadata from GitHub and uses Google Gemini to produce context-aware project summaries, highlights, and architecture descriptions. The resulting content is combined with deterministic Markdown formatting to create a polished GitHub landing-page README.
+## ⬇️ Installation
 
-Once installed as a CLI tool, `readme-gen` can be called directly from any project directory:
+```bash
+pip install readme-gen
+```
+
+## 🚀 Usage
+
+Users interact with the tool through the readme-gen CLI. Running the command with a local file path or a GitHub repository URL initiates the scanning and analysis process. Configuration options allow users to specify output paths, overwrite existing files with --force, or skip AI analysis with the --no-ai flag. A GEMINI_API_KEY environment variable is required for AI-powered content generation.
+
+### CLI
 
 ```bash
 readme-gen
 ```
 
-The current directory is analyzed automatically and the generated documentation is written to `README.md`.
+### Project Commands
 
-## ⬇️ Installation
+| Purpose | Command         |
+| ------- | --------------- |
+| Test    | `uv run pytest` |
 
-### Install as a CLI tool
+## ⚡ Examples
 
-Clone the repository:
+### Example 1
+
+```bash
+readme-gen
+```
+
+### Example 2
 
 ```bash
 git clone https://github.com/olashin1/readme_gen.git
 cd readme_gen
 ```
 
-Install `readme-gen` with `uv`:
+### Example 3
 
 ```bash
 uv tool install .
-```
-
-Once installed, the `readme-gen` command is available from anywhere on your system.
-
-Verify the installation:
-
-```bash
-readme-gen --help
-```
-
-### Editable installation
-
-If you are developing `readme-gen` itself, install it in editable mode:
-
-```bash
-uv tool install --editable .
-```
-
-Changes to the local source code will then be reflected by the installed command without requiring a normal reinstall.
-
-## 🚀 Usage
-
-### Generate a README for the current project
-
-Navigate into any software project:
-
-```bash
-cd path/to/my-project
-```
-
-Then run:
-
-```bash
-readme-gen
-```
-
-`readme-gen` analyzes the current directory and generates:
-
-```text
-README.md
-```
-
-This means the typical workflow is simply:
-
-```bash
-cd my-project
-readme-gen
-```
-
-### Analyze another local project
-
-You can also provide a project path explicitly:
-
-```bash
-readme-gen path/to/project
-```
-
-The generated `README.md` will be written inside that project.
-
-### Analyze a GitHub repository
-
-Public GitHub repositories can be analyzed directly:
-
-```bash
-readme-gen https://github.com/owner/repository
-```
-
-When analyzing a remote repository, the resulting `README.md` is written to the directory where the command was executed.
-
-### Replace an existing README
-
-`readme-gen` will not overwrite an existing `README.md` by default.
-
-If a README already exists, use:
-
-```bash
-readme-gen --force
-```
-
-to explicitly replace it.
-
-### Generate without AI analysis
-
-Gemini analysis can be disabled with:
-
-```bash
-readme-gen --no-ai
-```
-
-The project will still be scanned and a README will be generated using the metadata detected locally.
-
-### Custom output path
-
-Use `--output` or `-o` to choose a different output file:
-
-```bash
-readme-gen --output PROJECT.md
 ```
 
 ## 🛠️ Tech Stack
@@ -153,39 +69,22 @@ readme-gen --output PROJECT.md
 | Category               | Technologies |
 | ---------------------- | ------------ |
 | **Languages**          | Python       |
+| **AI**                 | Gemini       |
+| **CLI**                | Typer        |
 | **Package Management** | uv           |
+
+## ⚙️ Environment Variables
+
+The application reads the following variable names. Values are not included in this README.
+
+| Variable         | Detected in                           |
+| ---------------- | ------------------------------------- |
+| `GEMINI_API_KEY` | `.env`, `src/readme_gen/ai/client.py` |
+| `GITHUB_TOKEN`   | `src/readme_gen/github/client.py`     |
 
 ## 🏗️ Architecture
 
-The system follows a pipeline architecture where a resolver identifies the repository source, a scanner extracts structured metadata using specialized detectors, and an AI module provides qualitative analysis. These inputs are aggregated into a standardized project model, which a formatting engine renders into final Markdown using deterministic templates.
-
-At a high level:
-
-```text
-Local Path / GitHub URL
-          │
-          ▼
- Repository Resolver
-          │
-          ▼
-     Project Scanner
-          │
-          ├── Languages
-          ├── Frameworks
-          ├── Packages
-          ├── Workflows
-          ├── Structure
-          └── Metadata
-          │
-          ▼
-    Gemini Analysis
-          │
-          ▼
- Deterministic Formatter
-          │
-          ▼
-       README.md
-```
+The tool follows a modular pipeline: a scanner component uses specialized detectors to gather raw facts from the repository; an analyzer layer optionally processes this metadata through the Gemini-3-flash-preview model for synthesis; and a generator component renders the final output into Markdown. Data consistency is maintained through a central Pydantic-based project model.
 
 ## 📁 Project Structure
 
@@ -203,25 +102,10 @@ readme-gen/
 <details>
 <summary>Local development setup</summary>
 
-Clone the repository:
-
 ```bash
 git clone https://github.com/olashin1/readme_gen.git
 cd readme_gen
-```
-
-Install the project dependencies:
-
-```bash
 uv sync
 ```
-
-Install the CLI in editable mode:
-
-```bash
-uv tool install --editable .
-```
-
-You can now modify `readme-gen` while testing the command from any other project directory.
 
 </details>

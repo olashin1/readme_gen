@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from enum import StrEnum
 from pathlib import Path
 
 from pydantic import BaseModel, Field
@@ -21,10 +22,9 @@ class ProjectAnalysis(BaseModel):
 
     highlights: list[str] = Field(
         description=(
-            "Four to six concise, compelling project highlights suitable "
-            "for a GitHub landing-page README. Focus on the project's most "
-            "important user-facing strengths rather than exhaustive "
-            "implementation details."
+            "Up to six concise, repository-supported project highlights. "
+            "Return fewer or none when the supplied facts do not establish "
+            "user-facing capabilities."
         )
     )
 
@@ -41,6 +41,57 @@ class ProjectAnalysis(BaseModel):
             "major components without excessive implementation detail."
         )
     )
+
+
+class Confidence(StrEnum):
+    """How strongly repository evidence supports a detected fact."""
+
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+@dataclass(frozen=True, slots=True)
+class Evidence:
+    source: str
+    kind: str
+    confidence: Confidence = Confidence.HIGH
+
+
+@dataclass(frozen=True, slots=True)
+class TechnologyInfo:
+    name: str
+    category: str
+    role: str | None = None
+    evidence: tuple[Evidence, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectCommand:
+    kind: str
+    command: str
+    source: str
+    name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EnvironmentVariable:
+    name: str
+    sources: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ApiRoute:
+    method: str
+    path: str
+    source: str
+    handler: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectAsset:
+    path: str
+    kind: str
 
 
 @dataclass
@@ -124,13 +175,32 @@ class ProjectInfo:
 
     languages: list[str] = field(default_factory=list)
     frameworks: list[str] = field(default_factory=list)
+    libraries: list[str] = field(default_factory=list)
     package_managers: list[str] = field(default_factory=list)
+
+    technologies: list[TechnologyInfo] = field(default_factory=list)
+    technology_roles: dict[str, list[str]] = field(default_factory=dict)
+    databases: list[str] = field(default_factory=list)
+    external_services: list[str] = field(default_factory=list)
+    frontend: list[str] = field(default_factory=list)
+    backend: list[str] = field(default_factory=list)
 
     dependencies: list[str] = field(default_factory=list)
     dev_dependencies: list[str] = field(default_factory=list)
 
     cli_commands: dict[str, str] = field(default_factory=dict)
     package_scripts: dict[str, str] = field(default_factory=dict)
+    commands: list[ProjectCommand] = field(default_factory=list)
+    environment_variables: list[EnvironmentVariable] = field(
+        default_factory=list
+    )
+    api_routes: list[ApiRoute] = field(default_factory=list)
+    assets: list[ProjectAsset] = field(default_factory=list)
+
+    # Optional repository-derived statements. Detectors should leave these
+    # empty instead of inferring capabilities from filenames alone.
+    features: list[str] = field(default_factory=list)
+    architecture_components: list[str] = field(default_factory=list)
 
     source_dirs: list[str] = field(default_factory=list)
     test_dirs: list[str] = field(default_factory=list)
