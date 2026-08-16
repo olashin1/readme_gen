@@ -1,68 +1,85 @@
-# readme-gen
+<div align="center">
 
-A CLI tool that analyzes a project and generates a README.
+# Flask
 
-## Overview
+**A simple framework for building complex web applications.**
 
-A Python-based CLI tool designed to automate the creation of project documentation by analyzing source code, directory structures, and metadata to generate a structured README.md file.
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white) ![License](https://img.shields.io/badge/license-BSD--3--Clause-blue) [![Lock inactive closed issues](https://github.com/pallets/flask/actions/workflows/lock.yaml/badge.svg)](https://github.com/pallets/flask/actions/workflows/lock.yaml) [![GitHub Stars](https://img.shields.io/github/stars/pallets/flask?style=flat)](https://github.com/pallets/flask/stargazers)
 
-## Features
+[Repository](https://github.com/pallets/flask) • [Website](https://flask.palletsprojects.com) • [Issues](https://github.com/pallets/flask/issues)
 
-- Automated project scanning for languages, frameworks, and package managers.
-- AI-powered analysis using Google Gemini to generate project summaries, feature lists, and architectural overviews.
-- Directory tree generation with support for configurable ignored paths (e.g., .git, node_modules, .venv).
-- Heuristic-based detection of installation and usage commands for various ecosystems including Python (uv, poetry, pip), JavaScript (npm, yarn, pnpm, bun), and others.
-- Configurable Markdown output via CLI arguments.
-- Support for non-AI generation mode to produce basic documentation without LLM calls.
+</div>
 
-## Tech Stack
+## ✨ Overview
 
-**Languages:** Python
-**Package Managers:** uv
+Flask is a lightweight Python web framework built on the Werkzeug WSGI toolkit and Jinja2 template engine, designed for developing web applications and APIs.
 
-## Installation
+## 🚀 Features
 
-Clone the repository and install dependencies:
+- WSGI-compliant application object for handling web requests.
+- Integrated routing system based on Werkzeug with support for URL variables and converters.
+- Templating engine integration using Jinja2 with template inheritance support.
+- Blueprint system for modular application design and route organization.
+- Application and request context management using context locals (g, request, session, current_app).
+- Extensible configuration system supporting object, file, and environment-based settings.
+- CLI integration via Click for application management and custom command registration.
+- Support for asynchronous route handlers and error handlers via asgiref.
+- Built-in session management using secure cookie-based signed headers.
+- Signals support via the Blinker library for application lifecycle hooks.
+- Comprehensive testing suite utilities including FlaskClient and FlaskCliRunner.
+
+## ⚡ Quick Start
+
+### Installation
 
 ```bash
-git clone <repository-url>
-cd readme_gen
+git clone https://github.com/pallets/flask
+cd flask
 uv sync
 ```
 
-## Usage
+### Usage
 
-Run the tool via the command 'readme-gen [PATH]'. Use the '--output' or '-o' flag to specify a destination file (defaults to README.generated.md). The '--no-ai' flag disables Gemini analysis. Requires a GEMINI_API_KEY environment variable for AI-assisted content.
-
-### CLI
+Applications are initialized via the Flask class and routes are defined using decorators such as @app.route(). Deployment is managed through the 'flask' CLI, which uses environment variables like FLASK_APP to locate the application. It supports development servers via 'flask run' and production deployment through WSGI containers like Gunicorn or Waitress.
 
 ```bash
-readme-gen [PATH]
+flask
 ```
 
-## Architecture
+## 🛠️ Tech Stack
 
-The tool is structured into three main layers: a scanner that extracts metadata and file structures from the local filesystem, an AI analyzer that sends filtered repository context to the Gemini API, and a generator that formats both extracted and analyzed data into a Markdown template using Pydantic models for data integrity.
+| Category               | Technologies |
+| ---------------------- | ------------ |
+| **Languages**          | Python       |
+| **Package Management** | uv           |
 
-## Project Structure
+## 🏗️ Architecture
+
+The framework uses a layered architecture where the core 'Flask' object inherits from a 'Scaffold' base class. It relies on Werkzeug for HTTP abstractions and routing, Jinja2 for templating, and ItsDangerous for secure data signing. Logic is partially organized into 'sans-io' components to separate core application logic from the WSGI interface.
+
+## 📁 Project Structure
 
 ```text
-readme_gen/
-├── src
-│   └── readme_gen
-│       ├── ai
-│       ├── detectors
-│       ├── __init__.py
-│       ├── generator.py
-│       ├── main.py
-│       ├── models.py
-│       └── scanner.py
-├── tests
-│   ├── test_generator.py
-│   └── test_scanner.py
-├── .gitignore
-├── .python-version
-├── pyproject.toml
-├── README.md
-└── uv.lock
+flask/
+├── src/  # Source code
+│   └── flask/
+├── tests/  # Test suite
+├── docs/  # Documentation
+├── examples/  # Examples
+├── .github/  # GitHub configuration
+│   └── workflows/  # CI/CD workflows
+├── pyproject.toml  # Python project configuration
+├── LICENSE.txt  # License
+└── README.md  # Project documentation
 ```
+
+## 🔗 Repository
+
+|                    |                                                                            |
+| ------------------ | -------------------------------------------------------------------------- |
+| **Default branch** | `main`                                                                     |
+| **Topics**         | `flask`, `jinja`, `pallets`, `python`, `web-framework`, `werkzeug`, `wsgi` |
+
+## 📄 License
+
+This project is licensed under the **BSD-3-Clause** license.

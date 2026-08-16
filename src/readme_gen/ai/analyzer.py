@@ -30,4 +30,4 @@ def analyze_project(project: ProjectInfo) -> ProjectAnalysis:
             "Gemini returned no structured project analysis."
         )
 
-    return response.parsed
+    return response.parsed # type: ignore

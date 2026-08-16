@@ -59,6 +59,7 @@ demo = "demo.main:app"
     assert "pyproject.toml" in project.context_files
     assert "src/demo/main.py" in project.context_files
 
+
 def test_scan_react_project(tmp_path: Path):
     package_json = tmp_path / "package.json"
 
@@ -121,6 +122,7 @@ def test_scan_react_project(tmp_path: Path):
     assert "package.json" in project.context_files
     assert "src/App.tsx" in project.context_files
 
+
 def test_ignored_directories_are_not_scanned(tmp_path: Path):
     node_modules = tmp_path / "node_modules"
     node_modules.mkdir()
@@ -134,3 +136,92 @@ def test_ignored_directories_are_not_scanned(tmp_path: Path):
     project = scan_project(tmp_path)
 
     assert "Python" not in project.languages
+
+
+def test_scan_project_detects_github_workflows(
+    tmp_path: Path,
+):
+    workflow_directory = (
+        tmp_path
+        / ".github"
+        / "workflows"
+    )
+
+    workflow_directory.mkdir(
+        parents=True,
+    )
+
+    tests_workflow = (
+        workflow_directory
+        / "tests.yaml"
+    )
+
+    tests_workflow.write_text(
+        """
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: pytest
+""".strip(),
+        encoding="utf-8",
+    )
+
+    publish_workflow = (
+        workflow_directory
+        / "publish.yml"
+    )
+
+    publish_workflow.write_text(
+        """
+name: Publish
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: uv publish
+""".strip(),
+        encoding="utf-8",
+    )
+
+    project = scan_project(tmp_path)
+
+    assert len(project.workflows) == 2
+
+    assert [
+        workflow.path
+        for workflow in project.workflows
+    ] == [
+        ".github/workflows/publish.yml",
+        ".github/workflows/tests.yaml",
+    ]
+
+    tests_info = next(
+        workflow
+        for workflow in project.workflows
+        if workflow.name == "Tests"
+    )
+
+    publish_info = next(
+        workflow
+        for workflow in project.workflows
+        if workflow.name == "Publish"
+    )
+
+    assert tests_info.purpose == "testing"
+    assert publish_info.purpose == "publishing"

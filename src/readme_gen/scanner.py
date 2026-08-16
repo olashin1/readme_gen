@@ -10,6 +10,7 @@ from readme_gen.detectors.structure import (
     build_directory_tree,
     detect_structure,
 )
+from readme_gen.detectors.workflows import detect_workflows
 from readme_gen.models import ProjectInfo
 
 
@@ -54,24 +55,52 @@ def scan_project(root: Path) -> ProjectInfo:
     files = get_project_files(root)
 
     project.languages = detect_languages(files)
-    project.frameworks = detect_frameworks(root)
-    project.package_managers = detect_package_managers(root)
 
-    detect_metadata(root, project)
+    project.frameworks = detect_frameworks(
+        root
+    )
+
+    project.package_managers = (
+        detect_package_managers(
+            root
+        )
+    )
+
+    detect_metadata(
+        root,
+        project,
+    )
 
     (
         project.source_dirs,
         project.test_dirs,
         project.important_files,
-    ) = detect_structure(root, files)
-
-    project.context_files = detect_context_files(
+    ) = detect_structure(
         root,
         files,
     )
 
-    project.directory_tree = build_directory_tree(root)
+    project.context_files = (
+        detect_context_files(
+            root,
+            files,
+        )
+    )
 
-    project.project_type = detect_project_type(project)
+    project.workflows = detect_workflows(
+        root
+    )
+
+    project.directory_tree = (
+        build_directory_tree(
+            root
+        )
+    )
+
+    project.project_type = (
+        detect_project_type(
+            project
+        )
+    )
 
     return project
