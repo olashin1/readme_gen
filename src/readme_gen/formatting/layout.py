@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 from readme_gen.formatting.sections import (
     render_architecture,
+    render_development,
     render_header,
     render_highlights,
     render_installation,
@@ -36,6 +37,7 @@ DEFAULT_LAYOUT: tuple[
     render_architecture,
     render_structure,
     render_repository_info,
+    render_development,
     render_license,
 )
 
@@ -53,6 +55,7 @@ CLI_LAYOUT: tuple[
     render_architecture,
     render_structure,
     render_repository_info,
+    render_development,
     render_license,
 )
 
@@ -70,6 +73,7 @@ LIBRARY_LAYOUT: tuple[
     render_tech_stack,
     render_structure,
     render_repository_info,
+    render_development,
     render_license,
 )
 
@@ -87,6 +91,7 @@ APPLICATION_LAYOUT: tuple[
     render_architecture,
     render_structure,
     render_repository_info,
+    render_development,
     render_license,
 )
 
@@ -94,12 +99,6 @@ APPLICATION_LAYOUT: tuple[
 def render_readme(
     project: ProjectInfo,
 ) -> str:
-    """
-    Render a complete GitHub landing-page README.
-
-    Project type controls section ordering while individual section renderers
-    remain responsible for Markdown presentation.
-    """
     layout = choose_layout(
         project
     )
@@ -121,9 +120,6 @@ def render_readme(
 def choose_layout(
     project: ProjectInfo,
 ) -> tuple[SectionRenderer, ...]:
-    """
-    Select an appropriate README layout for the detected project type.
-    """
     project_type = (
         project.project_type
         or ""

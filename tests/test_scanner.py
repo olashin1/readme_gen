@@ -59,6 +59,15 @@ demo = "demo.main:app"
     assert "pyproject.toml" in project.context_files
     assert "src/demo/main.py" in project.context_files
 
+    assert len(project.packages) == 1
+
+    package_info = project.packages[0]
+
+    assert package_info.ecosystem == "pypi"
+    assert package_info.name == "demo-project"
+    assert package_info.version == "0.1.0"
+    assert package_info.install_command == "pip install demo-project"
+
 
 def test_scan_react_project(tmp_path: Path):
     package_json = tmp_path / "package.json"
@@ -121,6 +130,8 @@ def test_scan_react_project(tmp_path: Path):
     assert project.project_type == "frontend"
     assert "package.json" in project.context_files
     assert "src/App.tsx" in project.context_files
+
+    assert project.packages == []
 
 
 def test_ignored_directories_are_not_scanned(tmp_path: Path):

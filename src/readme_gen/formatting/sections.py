@@ -4,15 +4,12 @@ from pathlib import PurePosixPath
 
 from readme_gen.formatting.badges import generate_badges
 from readme_gen.formatting.structure import build_structure_preview
-from readme_gen.models import ProjectInfo
+from readme_gen.models import PackageInfo, ProjectInfo
 
 
 def render_header(
     project: ProjectInfo,
 ) -> str:
-    """
-    Render the GitHub-facing project hero/header.
-    """
     title = get_display_name(project)
     tagline = get_tagline(project)
     badges = generate_badges(project)
@@ -61,9 +58,6 @@ def render_header(
 def render_highlights(
     project: ProjectInfo,
 ) -> str:
-    """
-    Render the project's most important landing-page selling points.
-    """
     if not project.analysis:
         return ""
 
@@ -92,9 +86,6 @@ def render_highlights(
 def render_overview(
     project: ProjectInfo,
 ) -> str:
-    """
-    Render the concise project overview.
-    """
     if not project.analysis:
         return ""
 
@@ -115,12 +106,6 @@ def render_overview(
 def render_usage(
     project: ProjectInfo,
 ) -> str:
-    """
-    Render a concise explanation of how users interact with the project.
-
-    Exact command syntax is only shown when it has been detected
-    deterministically from project metadata.
-    """
     usage_summary = get_usage_intro(
         project
     )
@@ -188,13 +173,53 @@ def render_usage(
 def render_installation(
     project: ProjectInfo,
 ) -> str:
-    """
-    Render deterministic setup instructions.
+    package = get_primary_package(
+        project
+    )
 
-    Project-aware user installation will become smarter in the next phase.
-    For now this uses repository and package-manager metadata that has been
-    directly detected from the project.
-    """
+    if package is not None:
+        return "\n".join(
+            [
+                "## ⬇️ Installation",
+                "",
+                "```bash",
+                package.install_command,
+                "```",
+            ]
+        )
+
+    commands = detect_install_commands(
+        project
+    )
+
+    if not commands:
+        return ""
+
+    setup_commands = get_clone_commands(
+        project,
+        commands,
+    )
+
+    if not setup_commands:
+        return ""
+
+    return "\n".join(
+        [
+            "## ⬇️ Installation",
+            "",
+            "```bash",
+            *setup_commands,
+            "```",
+        ]
+    )
+
+
+def render_development(
+    project: ProjectInfo,
+) -> str:
+    if not project.packages:
+        return ""
+
     install_commands = detect_install_commands(
         project
     )
@@ -212,11 +237,16 @@ def render_installation(
 
     return "\n".join(
         [
-            "## ⬇️ Installation",
+            "## 🧑‍💻 Development",
+            "",
+            "<details>",
+            "<summary>Local development setup</summary>",
             "",
             "```bash",
             *commands,
             "```",
+            "",
+            "</details>",
         ]
     )
 
@@ -394,15 +424,18 @@ def render_license(
     )
 
 
+def get_primary_package(
+    project: ProjectInfo,
+) -> PackageInfo | None:
+    if not project.packages:
+        return None
+
+    return project.packages[0]
+
+
 def get_display_name(
     project: ProjectInfo,
 ) -> str:
-    """
-    Return the best human-facing project name.
-
-    Project metadata is preferred over the repository slug because repository
-    names may be lowercase or otherwise machine-oriented.
-    """
     if project.name:
         return project.name
 
@@ -418,12 +451,6 @@ def get_display_name(
 def get_tagline(
     project: ProjectInfo,
 ) -> str | None:
-    """
-    Return the best landing-page tagline.
-
-    AI analysis is preferred because it is specifically generated for the
-    README hero. Existing project/repository descriptions remain fallbacks.
-    """
     if project.analysis:
         tagline = project.analysis.tagline.strip()
 
@@ -474,9 +501,6 @@ def get_clone_commands(
     project: ProjectInfo,
     install_commands: list[str],
 ) -> list[str]:
-    if not install_commands:
-        return []
-
     repository_url = get_repository_url(
         project
     )
@@ -539,14 +563,10 @@ def detect_install_commands(
         commands.append("uv sync")
 
     elif "Poetry" in managers:
-        commands.append(
-            "poetry install"
-        )
+        commands.append("poetry install")
 
     elif "Pipenv" in managers:
-        commands.append(
-            "pipenv install"
-        )
+        commands.append("pipenv install")
 
     elif "pip" in managers:
         commands.append(
@@ -554,34 +574,22 @@ def detect_install_commands(
         )
 
     if "npm" in managers:
-        commands.append(
-            "npm install"
-        )
+        commands.append("npm install")
 
     elif "pnpm" in managers:
-        commands.append(
-            "pnpm install"
-        )
+        commands.append("pnpm install")
 
     elif "Yarn" in managers:
-        commands.append(
-            "yarn install"
-        )
+        commands.append("yarn install")
 
     elif "Bun" in managers:
-        commands.append(
-            "bun install"
-        )
+        commands.append("bun install")
 
     if "Cargo" in managers:
-        commands.append(
-            "cargo build"
-        )
+        commands.append("cargo build")
 
     if "Go Modules" in managers:
-        commands.append(
-            "go mod download"
-        )
+        commands.append("go mod download")
 
     return commands
 
@@ -635,24 +643,16 @@ def get_package_script_command(
     )
 
     if "npm" in managers:
-        return (
-            f"npm run {script_name}"
-        )
+        return f"npm run {script_name}"
 
     if "pnpm" in managers:
-        return (
-            f"pnpm {script_name}"
-        )
+        return f"pnpm {script_name}"
 
     if "Yarn" in managers:
-        return (
-            f"yarn {script_name}"
-        )
+        return f"yarn {script_name}"
 
     if "Bun" in managers:
-        return (
-            f"bun run {script_name}"
-        )
+        return f"bun run {script_name}"
 
     return script_name
 
@@ -660,12 +660,6 @@ def get_package_script_command(
 def get_license_name(
     project: ProjectInfo,
 ) -> str | None:
-    """
-    Return the best human-facing license name.
-
-    Repository SPDX metadata is preferred over scanner values because local
-    detection may only identify a filename such as LICENSE.txt.
-    """
     repository = project.repository
 
     if repository:
@@ -686,10 +680,7 @@ def get_license_link(
 ) -> str | None:
     repository = project.repository
 
-    if not repository:
-        return None
-
-    if not repository.url:
+    if not repository or not repository.url:
         return None
 
     license_file = find_license_file(

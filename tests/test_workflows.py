@@ -264,6 +264,75 @@ def test_unknown_workflow_defaults_to_ci() -> None:
     assert purpose == "ci"
 
 
+def test_ubuntu_latest_does_not_match_test() -> None:
+    purpose = detect_workflow_purpose(
+        filename="automation",
+        name="Automation",
+        content="""
+jobs:
+  task:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
+""".strip(),
+    )
+
+    assert purpose == "ci"
+
+
+def test_issue_lock_workflow_does_not_match_testing(
+    tmp_path: Path,
+) -> None:
+    create_workflow(
+        tmp_path,
+        "lock.yaml",
+        """
+name: Lock inactive closed issues
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dessant/lock-threads@v5
+""".strip(),
+    )
+
+    workflows = detect_workflows(
+        tmp_path
+    )
+
+    assert len(workflows) == 1
+
+    workflow = workflows[0]
+
+    assert (
+        workflow.name
+        == "Lock inactive closed issues"
+    )
+
+    assert workflow.purpose == "ci"
+
+
+def test_full_test_token_still_matches_testing() -> None:
+    purpose = detect_workflow_purpose(
+        filename="ci",
+        name="Continuous Integration",
+        content="""
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: python -m pytest
+""".strip(),
+    )
+
+    assert purpose == "testing"
+
+
 def test_humanize_workflow_filename() -> None:
     assert (
         humanize_workflow_filename(

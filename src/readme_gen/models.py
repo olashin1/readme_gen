@@ -45,14 +45,6 @@ class ProjectAnalysis(BaseModel):
 
 @dataclass
 class RepositoryMetadata:
-    """
-    Provider-neutral metadata about the repository hosting the project.
-
-    This model intentionally does not depend on GitHub-specific classes so
-    the scanner, AI layer, and README generator remain independent from the
-    implementation used to retrieve remote repository information.
-    """
-
     owner: str | None = None
     name: str | None = None
     url: str | None = None
@@ -81,24 +73,43 @@ class RepositoryMetadata:
 
 @dataclass(frozen=True, slots=True)
 class WorkflowInfo:
-    """
-    Information about a detected GitHub Actions workflow.
-
-    Attributes:
-        name:
-            Human-facing workflow name.
-
-        path:
-            Repository-relative path to the workflow file.
-
-        purpose:
-            Broad purpose inferred from the workflow, such as testing,
-            linting, publishing, security, documentation, or general CI.
-    """
-
     name: str
     path: str
     purpose: str
+
+
+@dataclass(frozen=True, slots=True)
+class PackageInfo:
+    ecosystem: str
+    name: str
+    version: str | None
+    manifest: str
+    install_command: str
+
+
+@dataclass(frozen=True, slots=True)
+class UsageExample:
+    """
+    A concise usage example detected directly from the repository.
+
+    Attributes:
+        language:
+            Markdown code-fence language.
+
+        code:
+            Example code or command content.
+
+        source:
+            Repository-relative file that provided the example.
+
+        title:
+            Optional short label describing the example.
+    """
+
+    language: str
+    code: str
+    source: str
+    title: str | None = None
 
 
 @dataclass
@@ -128,6 +139,8 @@ class ProjectInfo:
     directory_tree: list[str] = field(default_factory=list)
 
     workflows: list[WorkflowInfo] = field(default_factory=list)
+    packages: list[PackageInfo] = field(default_factory=list)
+    usage_examples: list[UsageExample] = field(default_factory=list)
 
     repository: RepositoryMetadata | None = None
     analysis: ProjectAnalysis | None = None

@@ -243,10 +243,11 @@ def detect_workflow_purpose(
 
     Workflow identity receives more weight than arbitrary step contents:
     filename and workflow name are checked first, followed by file content.
+
+    Exact token sequences are used instead of substring matching so words
+    such as "latest" do not accidentally match the pattern "test".
     """
-    identity = (
-        f"{filename} {name}"
-    ).lower()
+    identity = f"{filename} {name}"
 
     identity_match = match_purpose(
         identity
@@ -256,7 +257,7 @@ def detect_workflow_purpose(
         return identity_match
 
     content_match = match_purpose(
-        content.lower()
+        content
     )
 
     if content_match:
@@ -270,30 +271,89 @@ def match_purpose(
 ) -> str | None:
     """
     Match text against the known workflow-purpose vocabulary.
+
+    Patterns are compared as complete token sequences rather than arbitrary
+    substrings. This prevents false positives such as:
+
+        "ubuntu-latest" matching "test"
+
+    while still allowing multi-word patterns such as:
+
+        "npm publish"
+        "cargo build"
+        "docker push"
     """
-    normalized = normalize_text(
+    tokens = tokenize_text(
         value
     )
 
+    if not tokens:
+        return None
+
     for purpose, patterns in PURPOSE_PATTERNS:
         for pattern in patterns:
-            if normalize_text(pattern) in normalized:
+            pattern_tokens = tokenize_text(
+                pattern
+            )
+
+            if contains_token_sequence(
+                tokens,
+                pattern_tokens,
+            ):
                 return purpose
 
     return None
 
 
-def normalize_text(
+def tokenize_text(
     value: str,
-) -> str:
+) -> list[str]:
     """
-    Normalize text for lightweight keyword matching.
+    Convert text into lowercase alphanumeric tokens.
+
+    Examples:
+        "ubuntu-latest" -> ["ubuntu", "latest"]
+        "pre-commit" -> ["pre", "commit"]
+        "npm publish" -> ["npm", "publish"]
     """
-    return re.sub(
-        r"[^a-z0-9]+",
-        " ",
+    return re.findall(
+        r"[a-z0-9]+",
         value.lower(),
-    ).strip()
+    )
+
+
+def contains_token_sequence(
+    tokens: list[str],
+    pattern_tokens: list[str],
+) -> bool:
+    """
+    Return whether a complete token sequence occurs in another token list.
+    """
+    if not pattern_tokens:
+        return False
+
+    pattern_length = len(
+        pattern_tokens
+    )
+
+    if pattern_length > len(tokens):
+        return False
+
+    for index in range(
+        len(tokens)
+        - pattern_length
+        + 1
+    ):
+        if (
+            tokens[
+                index:
+                index + pattern_length
+            ]
+            == pattern_tokens
+        ):
+            return True
+
+    return False
 
 
 def humanize_workflow_filename(

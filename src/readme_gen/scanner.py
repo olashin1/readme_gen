@@ -5,6 +5,7 @@ from readme_gen.detectors.frameworks import detect_frameworks
 from readme_gen.detectors.languages import detect_languages
 from readme_gen.detectors.metadata import detect_metadata
 from readme_gen.detectors.package_managers import detect_package_managers
+from readme_gen.detectors.packages import detect_packages
 from readme_gen.detectors.project_type import detect_project_type
 from readme_gen.detectors.structure import (
     build_directory_tree,
@@ -88,6 +89,10 @@ def scan_project(root: Path) -> ProjectInfo:
     )
 
     project.workflows = detect_workflows(
+        root
+    )
+
+    project.packages = detect_packages(
         root
     )
 
