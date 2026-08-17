@@ -9,14 +9,16 @@ class ProjectAnalysis(BaseModel):
     tagline: str = Field(
         description=(
             "A concise one-sentence tagline suitable for display directly "
-            "beneath the project title in a GitHub README."
+            "beneath the project title in a GitHub README. Do not include "
+            "emojis or decorative Unicode symbols."
         )
     )
 
     summary: str = Field(
         description=(
             "A concise overview explaining what the project does, what "
-            "problem it solves, and who it is useful for."
+            "problem it solves, and who it is useful for. Do not include "
+            "emojis or decorative Unicode symbols."
         )
     )
 
@@ -24,21 +26,24 @@ class ProjectAnalysis(BaseModel):
         description=(
             "Up to six concise, repository-supported project highlights. "
             "Return fewer or none when the supplied facts do not establish "
-            "user-facing capabilities."
+            "user-facing capabilities. Do not include emojis or decorative "
+            "Unicode symbols."
         )
     )
 
     usage_summary: str = Field(
         description=(
             "A short explanation of how a user typically interacts with or "
-            "runs the project."
+            "runs the project. Do not include emojis or decorative Unicode "
+            "symbols."
         )
     )
 
     architecture: str = Field(
         description=(
             "A high-level explanation of the project's architecture and "
-            "major components without excessive implementation detail."
+            "major components without excessive implementation detail. Do "
+            "not include emojis or decorative Unicode symbols."
         )
     )
 

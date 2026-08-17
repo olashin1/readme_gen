@@ -289,7 +289,7 @@ def test_generator_renders_highlights(
         make_project(tmp_path)
     )
 
-    assert "## 🌟 Highlights" in readme
+    assert "## Highlights" in readme
 
     assert (
         "- Automatic repository scanning"
@@ -301,7 +301,7 @@ def test_generator_renders_highlights(
         in readme
     )
 
-    assert "## 🚀 Features" not in readme
+    assert "## Features" not in readme
 
 
 def test_highlights_appear_before_overview(
@@ -316,11 +316,11 @@ def test_highlights_appear_before_overview(
     )
 
     highlights_position = readme.index(
-        "## 🌟 Highlights"
+        "## Highlights"
     )
 
     overview_position = readme.index(
-        "## ℹ️ Overview"
+        "## Overview"
     )
 
     assert (
@@ -340,7 +340,7 @@ def test_generator_renders_overview(
         make_project(tmp_path)
     )
 
-    assert "## ℹ️ Overview" in readme
+    assert "## Overview" in readme
 
     assert (
         "readme-gen analyzes software repositories"
@@ -359,7 +359,7 @@ def test_generator_renders_usage(
         make_project(tmp_path)
     )
 
-    assert "## 🚀 Usage" in readme
+    assert "## Usage" in readme
 
     assert (
         "Pass a local project path or GitHub "
@@ -396,7 +396,7 @@ def test_generator_renders_installation(
         make_project(tmp_path)
     )
 
-    assert "## ⬇️ Installation" in readme
+    assert "## Installation" in readme
 
     assert (
         "git clone "
@@ -419,7 +419,7 @@ def test_generator_renders_tech_stack_table(
         make_project(tmp_path)
     )
 
-    assert "## 🛠️ Tech Stack" in readme
+    assert "## Tech Stack" in readme
 
     assert (
         "| **Languages** | Python |"
@@ -443,7 +443,7 @@ def test_generator_renders_architecture(
         make_project(tmp_path)
     )
 
-    assert "## 🏗️ Architecture" in readme
+    assert "## Architecture" in readme
 
     assert (
         "Repository sources feed a common scanner"
@@ -462,7 +462,7 @@ def test_generator_renders_license_link(
         make_project(tmp_path)
     )
 
-    assert "## 📄 License" in readme
+    assert "## License" in readme
 
     assert (
         "[MIT]"
@@ -487,7 +487,7 @@ def test_generator_renders_semantic_project_structure(
         project
     )
 
-    assert "## 📁 Project Structure" in readme
+    assert "## Project Structure" in readme
 
     assert "readme-gen/" in readme
 

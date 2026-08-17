@@ -42,3 +42,25 @@ def test_analyze_project_hides_api_response_details(
 
     assert "sensitive upstream detail" not in str(caught.value)
     assert "--no-ai" in str(caught.value)
+
+
+def test_analyze_project_removes_emojis_from_every_generated_field(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = Mock()
+    client.models.generate_content.return_value.parsed = {
+        "tagline": "🚀 Ship projects faster",
+        "summary": "Analyze repositories 🔍 without guesswork.",
+        "highlights": ["✅ Detects tools", "Works across stacks 🧑‍💻"],
+        "usage_summary": "⚡ Run the CLI.",
+        "architecture": "Scanner ➡️ analyzer ➡️ renderer",
+    }
+    monkeypatch.setattr(analyzer, "get_gemini_client", lambda: client)
+
+    analysis = analyzer.analyze_project(_project())
+
+    assert analysis.tagline == "Ship projects faster"
+    assert analysis.summary == "Analyze repositories without guesswork."
+    assert analysis.highlights == ["Detects tools", "Works across stacks"]
+    assert analysis.usage_summary == "Run the CLI."
+    assert analysis.architecture == "Scanner analyzer renderer"

@@ -8,7 +8,7 @@
 
 </div>
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Category               | Technologies |
 | ---------------------- | ------------ |
@@ -18,7 +18,7 @@
 | **Testing**            | pytest       |
 | **Package Management** | uv           |
 
-## ⬇️ Installation
+## Installation
 
 ```bash
 git clone https://github.com/olashin1/readme_gen.git
@@ -26,7 +26,7 @@ cd readme_gen
 uv sync
 ```
 
-## 🚀 Usage
+## Usage
 
 ### CLI
 
@@ -34,13 +34,23 @@ uv sync
 readme-gen
 ```
 
-## ⚡ Examples
+## Examples
+
+### Example 1
+
+```bash
+git clone https://github.com/olashin1/readme_gen.git
+cd readme_gen
+uv sync
+```
+
+### Example 2
 
 ```bash
 readme-gen
 ```
 
-## ⚙️ Environment Variables
+## Environment Variables
 
 The application reads the following variable names. Values are not included in this README.
 
@@ -49,19 +59,20 @@ The application reads the following variable names. Values are not included in t
 | `GEMINI_API_KEY` | `.env`, `src/readme_gen/ai/client.py` |
 | `GITHUB_TOKEN`   | `src/readme_gen/github/client.py`     |
 
-## ✅ Testing
+## Testing
 
 ```bash
 uv run pytest
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 readme-gen/
 ├── src/  # Source code
 │   └── readme_gen/
 ├── tests/  # Test suite
+├── readme-examples/
 ├── pyproject.toml  # Python project configuration
 └── README.md  # Project documentation
 ```

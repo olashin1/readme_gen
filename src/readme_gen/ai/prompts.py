@@ -29,6 +29,7 @@ Important rules:
 - Keep the content concise and easy to skim.
 - Write for a technical audience without assuming deep familiarity with the project.
 - Prefer clear, direct language over promotional hype.
+- Use plain text only. Do not use or reproduce emojis, pictographs, decorative Unicode symbols, or emoji-style prefixes in any field.
 - Avoid vague phrases and adjectives such as "comprehensive", "robust", "seamless", "powerful", "cutting-edge", "state-of-the-art", and "innovative solution".
 - Prefer short sentences, concrete nouns, and terminology found in the metadata.
 - Do not write exhaustive API documentation.

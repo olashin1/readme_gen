@@ -72,7 +72,7 @@ def render_highlights(
         return ""
 
     lines = [
-        "## 🌟 Highlights",
+        "## Highlights",
         "",
     ]
 
@@ -97,7 +97,7 @@ def render_overview(
 
     return "\n".join(
         [
-            "## ℹ️ Overview",
+            "## Overview",
             "",
             summary,
         ]
@@ -135,7 +135,7 @@ def render_usage(
         return ""
 
     lines = [
-        "## 🚀 Usage",
+        "## Usage",
     ]
 
     if usage_summary:
@@ -205,7 +205,7 @@ def render_installation(
     if package is not None:
         return "\n".join(
             [
-                "## ⬇️ Installation",
+                "## Installation",
                 "",
                 "```bash",
                 package.install_command,
@@ -228,7 +228,7 @@ def render_installation(
 
     return "\n".join(
         [
-            "## ⬇️ Installation",
+            "## Installation",
             "",
             "```bash",
             *setup_commands,
@@ -258,7 +258,7 @@ def render_development(
 
     return "\n".join(
         [
-            "## 🧑‍💻 Development",
+            "## Development",
             "",
             "<details>",
             "<summary>Local development setup</summary>",
@@ -330,7 +330,7 @@ def render_tech_stack(
         return ""
 
     lines = [
-        "## 🛠️ Tech Stack",
+        "## Tech Stack",
         "",
         "| Category | Technologies |",
         "| --- | --- |",
@@ -351,7 +351,7 @@ def render_environment_variables(
         return ""
 
     lines = [
-        "## \u2699\ufe0f Environment Variables",
+        "## Environment Variables",
         "",
         "The application reads the following variable names. Values are not included in this README.",
         "",
@@ -382,7 +382,7 @@ def render_interfaces(
         return ""
 
     lines = [
-        "## \ud83d\udd0c API Endpoints",
+        "## API Endpoints",
         "",
         "| Method | Path | Handler |",
         "| --- | --- | --- |",
@@ -405,7 +405,7 @@ def render_building(
         return ""
     return "\n".join(
         [
-            "## \ud83d\udd28 Building",
+            "## Building",
             "",
             "```bash",
             *commands,
@@ -426,7 +426,7 @@ def render_testing(
         return ""
     return "\n".join(
         [
-            "## \u2705 Testing",
+            "## Testing",
             "",
             "```bash",
             *commands,
@@ -448,7 +448,7 @@ def render_examples(
         return ""
 
     heading = "Quick Start" if project.project_type == "library" else "Examples"
-    lines = [f"## \u26a1 {heading}"]
+    lines = [f"## {heading}"]
     for index, example in enumerate(examples, start=1):
         if len(examples) > 1:
             lines.extend(["", f"### Example {index}"])
@@ -501,7 +501,7 @@ def render_screenshots(
     if not screenshots:
         return ""
 
-    lines = ["## \ud83d\uddbc\ufe0f Screenshots"]
+    lines = ["## Screenshots"]
     for index, asset in enumerate(screenshots[:4], start=1):
         label = "Project screenshot" if len(screenshots) == 1 else f"Project screenshot {index}"
         lines.extend(["", f"![{label}]({asset.path})"])
@@ -523,7 +523,7 @@ def render_architecture(
 
     return "\n".join(
         [
-            "## 🏗️ Architecture",
+            "## Architecture",
             "",
             architecture,
         ]
@@ -542,7 +542,7 @@ def render_structure(
 
     return "\n".join(
         [
-            "## 📁 Project Structure",
+            "## Project Structure",
             "",
             "```text",
             *structure,
@@ -584,7 +584,7 @@ def render_repository_info(
         return ""
 
     lines = [
-        "## 🔗 Repository",
+        "## Repository",
         "",
         "| | |",
         "| --- | --- |",
@@ -625,7 +625,7 @@ def render_license(
 
     return "\n".join(
         [
-            "## 📄 License",
+            "## License",
             "",
             body,
         ]

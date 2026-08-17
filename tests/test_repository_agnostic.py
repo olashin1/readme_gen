@@ -50,10 +50,10 @@ def test_cpp_cmake_project_uses_native_sections_and_ignores_build_output(
     assert {interface.name for interface in project.interfaces} >= {"sensor-reader"}
     assert "building" in project.section_plan
     assert "testing" in project.section_plan
-    assert "## \ud83d\udd28 Building" in readme
-    assert "## \u2705 Testing" in readme
+    assert "## Building" in readme
+    assert "## Testing" in readme
     assert "| **Build System** | CMake |" in readme
-    assert "## \u2b07\ufe0f Installation" not in readme
+    assert "## Installation" not in readme
     assert "Python" not in project.languages
     assert not any(
         directory in "\n".join(project.directory_tree)
@@ -88,8 +88,8 @@ def test_rust_cli_has_cargo_commands_package_and_cli_role(tmp_path: Path) -> Non
     assert project.packages[0].install_command == "cargo install log-sift"
     assert any(interface.kind == "cli" for interface in project.interfaces)
     assert "cargo install log-sift" in readme
-    assert "## \ud83d\udd28 Building" in readme
-    assert "## \u2705 Testing" in readme
+    assert "## Building" in readme
+    assert "## Testing" in readme
     assert "| **CLI Framework** | Clap |" in readme
 
 

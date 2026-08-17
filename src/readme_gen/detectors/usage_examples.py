@@ -10,6 +10,11 @@ MAX_EXAMPLES = 3
 MAX_FILE_SIZE = 256_000
 MAX_CODE_CHARS = 1_500
 
+UNRESOLVED_TEMPLATE_PATTERN = re.compile(
+    r"\{\{.*?\}\}|\{%.*?%\}|\{#.*?#\}",
+    re.DOTALL,
+)
+
 README_NAMES = (
     "README.md",
     "README.markdown",
@@ -151,6 +156,9 @@ def is_useful_example(
     Filter out blocks that are unlikely to demonstrate project usage.
     """
     if not code:
+        return False
+
+    if UNRESOLVED_TEMPLATE_PATTERN.search(code):
         return False
 
     normalized_language = (

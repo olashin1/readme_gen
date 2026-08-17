@@ -237,6 +237,14 @@ def test_prompt_redacts_environment_values(tmp_path: Path) -> None:
     assert "API_KEY=<redacted>" in prompt
 
 
+def test_prompt_explicitly_forbids_emojis(tmp_path: Path) -> None:
+    project = scan_project(tmp_path)
+
+    prompt = build_project_prompt(project)
+
+    assert "Do not use or reproduce emojis" in prompt
+
+
 def test_detected_screenshot_is_rendered_without_inventing_a_path(tmp_path: Path) -> None:
     write(tmp_path / "public" / "screenshots" / "dashboard.png", "image bytes")
     project = scan_project(tmp_path)
@@ -246,7 +254,7 @@ def test_detected_screenshot_is_rendered_without_inventing_a_path(tmp_path: Path
     assert [asset.path for asset in project.assets] == [
         "public/screenshots/dashboard.png"
     ]
-    assert "## \ud83d\uddbc\ufe0f Screenshots" in readme
+    assert "## Screenshots" in readme
     assert "![Project screenshot](public/screenshots/dashboard.png)" in readme
 
 

@@ -129,6 +129,29 @@ def test_ignores_empty_blocks(
     ) == []
 
 
+def test_ignores_examples_with_unresolved_template_placeholders(
+    tmp_path: Path,
+) -> None:
+    (
+        tmp_path / "README.md"
+    ).write_text(
+        """
+```bash
+npm --prefix {{cookiecutter.project_slug}}/frontend install
+```
+
+```bash
+demo --help
+```
+""".strip(),
+        encoding="utf-8",
+    )
+
+    examples = detect_usage_examples(tmp_path)
+
+    assert [example.code for example in examples] == ["demo --help"]
+
+
 def test_detects_quickstart_documentation(
     tmp_path: Path,
 ) -> None:
